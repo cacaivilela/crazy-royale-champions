@@ -221,7 +221,8 @@ body{-webkit-tap-highlight-color:transparent;user-select:none}
 .codigo-box{background:rgba(124,58,237,.22);border:2px dashed rgba(255,255,255,.3);border-radius:16px;
   padding:12px;margin-bottom:16px}
 .codigo-box span{display:block;font-size:11px;letter-spacing:2px;opacity:.6}
-.codigo-box strong{display:block;font-size:38px;letter-spacing:8px;margin:2px 0 8px}
+.codigo-box strong{display:block;font-size:clamp(20px,6vw,34px);letter-spacing:4px;margin:2px 0 8px;
+  word-break:break-all}
 .lobby-lista{display:grid;gap:8px;margin:10px 0}
 .lobby-jog{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);
   border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:8px 12px;text-align:left}
@@ -292,3 +293,19 @@ body{-webkit-tap-highlight-color:transparent;user-select:none}
 .roleta-veloc{font-variant-numeric:tabular-nums;margin:2px 0 12px;font-size:15px}
 .roleta-veloc b{font-size:26px;color:var(--amarelo);text-shadow:0 0 14px rgba(250,204,21,.5)}
 .roleta-veloc span{opacity:.6;font-size:12px}
+
+.lobby-link{font-size:11px;opacity:.6;word-break:break-all;margin-top:6px}
+.lobby-diag{font-size:12px;opacity:.55;min-height:16px}
+
+/* ---------------- anfitrião saiu ---------------- */
+#host-saiu{position:absolute;inset:0;z-index:60;display:grid;place-items:center;padding:20px;
+  background:rgba(5,4,15,.92);backdrop-filter:blur(3px)}
+.host-saiu-box{max-width:460px;width:100%;text-align:center;display:grid;gap:12px;justify-items:center;
+  background:rgba(22,19,52,.95);border:2px solid var(--rosa);border-radius:22px;padding:30px 24px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);animation:pop .35s}
+.host-saiu-emoji{font-size:60px;line-height:1}
+.host-saiu-box h2{font-size:24px;letter-spacing:1px;
+  background:linear-gradient(90deg,var(--amarelo),var(--rosa));-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.host-saiu-box p{opacity:.8;font-size:14px}
+.host-saiu-box .play-btn{font-size:22px;padding:12px 52px}

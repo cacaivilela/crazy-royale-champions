@@ -111,8 +111,10 @@ function iniciarPartida (champId, modo) {
 }
 
 function voltarAoMenu () {
+  telaHostSaiu.classList.add('hidden')
   cheatsUI.parar()
   if (match) { match.destruir(); match = null }
+  window.CRC.match = null
   loop.stop()
   telaJogo.classList.add('hidden')
   lobby.esconder()
@@ -122,7 +124,27 @@ function voltarAoMenu () {
 }
 
 bus.on('partida:fim', (res) => hud.fim(res))
+
+// o anfitrião saiu: tela de aviso com botão OK
+const telaHostSaiu = document.getElementById('host-saiu')
+bus.on('sala:hostSaiu', ({ motivo }) => {
+  if (match) match.pausado = true
+  document.getElementById('host-saiu-motivo').textContent = motivo
+  telaHostSaiu.classList.remove('hidden')
+})
+document.getElementById('btn-host-saiu-ok').addEventListener('click', () => {
+  telaHostSaiu.classList.add('hidden')
+  voltarAoMenu()
+})
 bus.on('ir:menu', voltarAoMenu)
+
+// convite por link: ...?sala=2610 já abre o lobby e entra
+const salaDaUrl = new URLSearchParams(location.search).get('sala')
+if (salaDaUrl) {
+  menu.esconder()
+  lobby.champIdAtual = menu.champId
+  lobby.entrarPorLink(salaDaUrl.toUpperCase())
+}
 
 // ---------------- live update ----------------
 live.start()

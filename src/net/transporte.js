@@ -11,12 +11,26 @@
 // ============================================================
 
 const LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'   // sem 0/O/1/I pra não confundir
+export const TAMANHO_MAX_CODIGO = 10
 
-export function gerarCodigo (tam = 5) {
+export function gerarCodigo (tam = TAMANHO_MAX_CODIGO) {
+  tam = Math.max(3, Math.min(TAMANHO_MAX_CODIGO, tam))
   let s = ''
   for (let i = 0; i < tam; i++) s += LETRAS[Math.floor(Math.random() * LETRAS.length)]
   return s
 }
+
+// Servidores de conexão: STUN descobre seu IP público; TURN retransmite
+// quando os dois lados estão atrás de NAT/CGNAT (caso comum entre casas
+// diferentes, 4G e operadoras). Sem TURN, muita conexão simplesmente não fecha.
+export const SERVIDORES_ICE = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' },
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+]
 
 class Base {
   constructor () {
@@ -100,8 +114,19 @@ export class PeerTransporte extends Base {
 
   _novoPeer (id) {
     if (!window.Peer) throw new Error('PeerJS não carregou (vendor/peerjs.min.js)')
-    return new window.Peer(id, { debug: 1 })
+    const peer = new window.Peer(id, {
+      debug: 1,
+      config: { iceServers: SERVIDORES_ICE, iceCandidatePoolSize: 4 }
+    })
+    // se cair a ligação com o servidor de salas, tenta voltar sozinho
+    peer.on('disconnected', () => {
+      this._diag('conexão com o servidor de salas caiu — reconectando…')
+      setTimeout(() => { try { peer.reconnect() } catch (e) { /* já morreu */ } }, 800)
+    })
+    return peer
   }
+
+  _diag (texto) { if (this.aoDiagnostico) this.aoDiagnostico(texto) }
 
   _idDaSala (codigo) { return 'crazyroyale-champions-' + codigo }
 
@@ -111,13 +136,15 @@ export class PeerTransporte extends Base {
     return new Promise((resolve, reject) => {
       const peer = this._novoPeer(this._idDaSala(codigo))
       this.peer = peer
-      const tempo = setTimeout(() => reject(new Error('sem resposta do servidor de salas')), 12000)
+      const tempo = setTimeout(() => reject(new Error('o servidor de salas não respondeu — tente de novo em alguns segundos')), 25000)
+      this._diag('falando com o servidor de salas…')
       peer.on('open', (id) => {
         clearTimeout(tempo)
         this.meuId = id
+        this._diag('sala aberta! esperando alguém entrar…')
         resolve(codigo)
       })
-      peer.on('connection', (con) => this._ligarConexao(con))
+      peer.on('connection', (con) => { this._diag('alguém está entrando…'); this._ligarConexao(con) })
       peer.on('error', (err) => {
         clearTimeout(tempo)
         if (err.type === 'unavailable-id') reject(new Error('esse código já está em uso, tente outro'))
@@ -132,13 +159,36 @@ export class PeerTransporte extends Base {
     return new Promise((resolve, reject) => {
       const peer = this._novoPeer(null)
       this.peer = peer
-      const tempo = setTimeout(() => reject(new Error('nao achei essa sala')), 15000)
+      const tempo = setTimeout(() => reject(new Error(
+        'não consegui conectar na sala. Confirme o código e se a pessoa ainda está com a tela da sala aberta. ' +
+        'Se o código estiver certo, pode ser a rede bloqueando — tente pelo 4G do celular ou use o botão 🔍 testar conexão.'
+      )), 30000)
+      this._diag('falando com o servidor de salas…')
       peer.on('open', () => {
         this.meuId = peer.id
+        this._diag('procurando a sala ' + codigo + '…')
         const con = peer.connect(this._idDaSala(codigo), { reliable: true })
         this.conHost = con
-        con.on('open', () => { clearTimeout(tempo); this._ligarConexao(con); resolve(codigo) })
+        con.on('open', () => {
+          clearTimeout(tempo)
+          this._diag('conectado ao anfitrião ✅')
+          this._ligarConexao(con)
+          resolve(codigo)
+        })
         con.on('error', (e) => { clearTimeout(tempo); reject(e) })
+        // acompanha o aperto de mão do WebRTC (é aqui que costuma travar)
+        setTimeout(() => {
+          const pc = con.peerConnection
+          if (!pc || con.open) return
+          this._diag('negociando conexão (' + pc.iceConnectionState + ')…')
+          pc.oniceconnectionstatechange = () => {
+            this._diag('conexão: ' + pc.iceConnectionState)
+            if (pc.iceConnectionState === 'failed') {
+              clearTimeout(tempo)
+              reject(new Error('a rede de vocês bloqueou a conexão direta. Tente outra rede (4G do celular costuma resolver).'))
+            }
+          }
+        }, 1200)
       })
       peer.on('error', (err) => {
         clearTimeout(tempo)
@@ -173,6 +223,33 @@ export class PeerTransporte extends Base {
     if (this.peer) { try { this.peer.destroy() } catch (e) { /* já foi */ } }
     this.peer = null
   }
+}
+
+/**
+ * Testa se este computador/rede consegue usar WebRTC.
+ * Retorna { host, stun, turn, detalhe } — sem `stun` nem `turn` a conexão
+ * entre redes diferentes provavelmente não vai fechar.
+ */
+export async function testarConexao (tempoMs = 8000) {
+  const res = { host: false, stun: false, turn: false, detalhe: [] }
+  if (!window.RTCPeerConnection) { res.detalhe.push('este navegador não tem WebRTC'); return res }
+  const pc = new RTCPeerConnection({ iceServers: SERVIDORES_ICE })
+  pc.createDataChannel('teste')
+  await pc.setLocalDescription(await pc.createOffer())
+  await new Promise((resolve) => {
+    const fim = setTimeout(resolve, tempoMs)
+    pc.onicecandidate = (ev) => {
+      if (!ev.candidate) { clearTimeout(fim); return resolve() }
+      const c = ev.candidate.candidate
+      if (c.includes(' typ host')) res.host = true
+      if (c.includes(' typ srflx')) res.stun = true
+      if (c.includes(' typ relay')) res.turn = true
+    }
+  })
+  try { pc.close() } catch (e) { /* ok */ }
+  if (!res.stun && !res.turn) res.detalhe.push('a rede parece bloquear WebRTC (firewall/escola/trabalho)')
+  else if (!res.turn) res.detalhe.push('sem retransmissor: conexão só fecha em redes mais abertas')
+  return res
 }
 
 export function criarTransporte (tipo = 'peer') {

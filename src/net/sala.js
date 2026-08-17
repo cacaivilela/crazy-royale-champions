@@ -6,7 +6,7 @@
 // ============================================================
 import { CONFIG, CHAMPIONS } from '../data/runtime.js'
 import { bus } from '../core/events.js'
-import { criarTransporte, gerarCodigo } from './transporte.js'
+import { criarTransporte, gerarCodigo, TAMANHO_MAX_CODIGO } from './transporte.js'
 import { extraEquipado } from '../data/extras.js'
 
 const nomeAnonimo = () => 'Anônimo ' + Math.floor(Math.random() * 900 + 100)
@@ -39,8 +39,12 @@ export class Sala {
   // ---------------- criar / entrar ----------------
   async criar ({ nome, champId, tipo = 'peer', codigo = null, cheats = 'nenhum', modoJogo = 'normal' }) {
     this.modoJogo = modoJogo
-    const desejado = (codigo || '').toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
-    codigo = desejado.length >= 3 ? desejado.slice(0, 8) : gerarCodigo()
+    // o código é sempre sorteado pelo jogo (ninguém escolhe); `codigo` só existe
+    // pra testes automatizados chamarem direto pelo console.
+    const forcado = (codigo || '').toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+    codigo = forcado.length >= 3
+      ? forcado.slice(0, TAMANHO_MAX_CODIGO)
+      : gerarCodigo(CONFIG.online.tamanhoCodigo)
     this.cheats = cheats
     this.tr = criarTransporte(tipo)
     this._ligar()
@@ -58,7 +62,7 @@ export class Sala {
   async entrar (codigo, { nome, champId, tipo = 'peer' }) {
     this.tr = criarTransporte(tipo)
     this._ligar()
-    this.codigo = await this.tr.conectar(codigo.trim().toUpperCase())
+    this.codigo = await this.tr.conectar(codigo.trim().toUpperCase().slice(0, TAMANHO_MAX_CODIGO))
     this.souHost = false
     this.meuId = this.tr.meuId
     this.meuNome = nome || nomeAnonimo()
@@ -79,7 +83,15 @@ export class Sala {
     this.meuChamp = champId
   }
 
+  /** Cliente: o anfitrião sumiu (fechou a aba, caiu a internet, saiu da sala). */
+  hostCaiu (motivo = 'A partida online acabou porque quem criou a sala desconectou.') {
+    if (this.souHost || this.hostJaCaiu) return
+    this.hostJaCaiu = true
+    bus.emit('sala:hostSaiu', { motivo })
+  }
+
   sair () {
+    this.hostJaCaiu = false
     if (this.tr) this.tr.fechar()
     this.tr = null
     this.jogadores = []
@@ -170,6 +182,7 @@ export class Sala {
 
   _ligar () {
     const tr = this.tr
+    tr.aoDiagnostico = (texto) => bus.emit('sala:diagnostico', { texto })
 
     tr.aoEntrar = (id) => {
       if (!this.souHost) return
@@ -181,8 +194,11 @@ export class Sala {
         this.jogadores = this.jogadores.filter(j => j.id !== id)
         this._avisarLobby()
         if (this.match) this.match.comandos.delete(id)
+        bus.emit('sala:saiu-jogador', { id })
+        return
       }
-      bus.emit('sala:saiu-jogador', { id })
+      // sou cliente: quem caiu foi o anfitrião — acabou a brincadeira
+      this.hostCaiu()
     }
 
     tr.aoErro = (err) => bus.emit('sala:erro', { mensagem: err.message || String(err) })

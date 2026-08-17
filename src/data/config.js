@@ -82,6 +82,7 @@ export const BASE_CONFIG = {
     jogadoresPorTime: 6,      // 6 humanos (host + 5) contra 6 COMs
     multiplicadorArena: 2,    // estádio 2x maior no online
     maxJogadores: 6,
+    tamanhoCodigo: 10,        // código sorteado pelo jogo, até 10 dígitos
     tickSnapshotHz: 15,       // host manda estado do jogo
     tickComandoHz: 20,        // clientes mandam input
     servidorPeer: 'publico'   // broker público do PeerJS (não precisa hospedar nada)

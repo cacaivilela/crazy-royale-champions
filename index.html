@@ -186,9 +186,7 @@
             <button class="cheat-opt active" data-modo="normal">🏆 Normal — 6 vs 6 COMs</button>
             <button class="cheat-opt" data-modo="boss">🐍 Modo Boss — 12 vs chefão</button>
           </div>
-          <label>Código da sala (você escolhe!)
-            <input id="lobby-codigo-novo" maxlength="8" placeholder="ex.: 2610" class="codigo-input" />
-          </label>
+          <p class="lobby-ou">o código da sala é sorteado na hora — é só passar pros amigos 🎲</p>
           <div class="cheat-select" id="lobby-cheats">
             <span>Cheats da sala:</span>
             <button class="cheat-opt active" data-cheat="nenhum">🚫 Nenhum</button>
@@ -200,19 +198,24 @@
           </div>
           <div class="lobby-ou">ou entre com o código de um amigo</div>
           <div class="lobby-linha">
-            <input id="lobby-codigo" maxlength="6" placeholder="CÓDIGO" class="codigo-input" />
+            <input id="lobby-codigo" maxlength="10" placeholder="CÓDIGO" class="codigo-input" />
             <button id="btn-entrar" class="ghost-btn">ENTRAR</button>
           </div>
           <label class="lobby-check">
             <input type="checkbox" id="lobby-local" /> sala local (só abas deste navegador — para testar)
           </label>
+          <div class="lobby-linha">
+            <button id="btn-testar" class="ghost-btn">🔍 testar minha conexão</button>
+          </div>
         </div>
 
         <div id="lobby-sala" class="hidden">
           <div class="codigo-box">
             <span>CÓDIGO DA SALA</span>
             <strong id="lobby-codigo-atual">—</strong>
-            <button id="btn-copiar" class="ghost-btn">📋 copiar</button>
+            <button id="btn-copiar" class="ghost-btn">📋 copiar código</button>
+            <button id="btn-copiar-link" class="ghost-btn">🔗 copiar link do convite</button>
+            <p class="lobby-link" id="lobby-link"></p>
           </div>
           <h3>Jogadores <small id="lobby-contagem"></small></h3>
           <div id="lobby-jogadores" class="lobby-lista"></div>
@@ -228,7 +231,18 @@
         </div>
 
         <p id="lobby-status" class="lobby-status"></p>
+        <p id="lobby-diag" class="lobby-diag"></p>
         <button id="btn-voltar-menu" class="ghost-btn">🏠 voltar ao menu</button>
+      </div>
+    </div>
+
+    <!-- ====================== ANFITRIÃO SAIU ====================== -->
+    <div id="host-saiu" class="hidden">
+      <div class="host-saiu-box">
+        <span class="host-saiu-emoji">😢</span>
+        <h2>O ANFITRIÃO SAIU DA SALA</h2>
+        <p id="host-saiu-motivo">A partida online acabou porque quem criou a sala desconectou.</p>
+        <button id="btn-host-saiu-ok" class="play-btn">OK!</button>
       </div>
     </div>
 

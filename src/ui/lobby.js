@@ -6,6 +6,7 @@
 import { bus } from '../core/events.js'
 import { CONFIG, CHAMPIONS, getChampion } from '../data/runtime.js'
 import { sala } from '../net/sala.js'
+import { testarConexao } from '../net/transporte.js'
 import { MODOS } from '../game/cheats.js'
 import { getExtra } from '../data/extras.js'
 
@@ -21,8 +22,9 @@ export class Lobby {
       nome: $('#lobby-nome'), codigo: $('#lobby-codigo'), local: $('#lobby-local'),
       codigoAtual: $('#lobby-codigo-atual'), jogadores: $('#lobby-jogadores'),
       contagem: $('#lobby-contagem'), dica: $('#lobby-dica'), status: $('#lobby-status'),
-      comecar: $('#btn-comecar'), codigoNovo: $('#lobby-codigo-novo'),
-      cheats: $('#lobby-cheats'), cheatInfo: $('#lobby-cheat-info'), modos: $('#lobby-modos')
+      comecar: $('#btn-comecar'),
+      cheats: $('#lobby-cheats'), cheatInfo: $('#lobby-cheat-info'), modos: $('#lobby-modos'),
+      link: $('#lobby-link'), diag: $('#lobby-diag')
     }
     this.cheatsEscolhido = 'nenhum'
     this.modoEscolhido = 'normal'
@@ -35,6 +37,8 @@ export class Lobby {
     $('#btn-criar').addEventListener('click', () => this.criar())
     $('#btn-entrar').addEventListener('click', () => this.entrar())
     $('#btn-copiar').addEventListener('click', () => this.copiar())
+    $('#btn-copiar-link').addEventListener('click', () => this.copiarLink())
+    $('#btn-testar').addEventListener('click', () => this.testar())
     $('#btn-sair-sala').addEventListener('click', () => { sala.sair(); this.mostrarEntrada() })
     $('#btn-voltar-menu').addEventListener('click', () => { sala.sair(); this.esconder(); this.aoVoltar() })
     $('#btn-trocar-champ').addEventListener('click', () => this.aoTrocarCampeao())
@@ -43,8 +47,6 @@ export class Lobby {
       sala.iniciar()
     })
     this.el.codigo.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.entrar() })
-    this.el.codigoNovo.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.criar() })
-
     this.el.modos.addEventListener('click', (e) => {
       const b = e.target.closest('.cheat-opt')
       if (!b) return
@@ -60,6 +62,7 @@ export class Lobby {
     })
 
     bus.on('sala:lobby', (estado) => this.renderar(estado))
+    bus.on('sala:diagnostico', ({ texto }) => { this.el.diag.textContent = '· ' + texto })
     bus.on('menu:campeao', ({ champId }) => this.definirCampeao(champId))
     bus.on('sala:erro', ({ mensagem }) => this.status('⚠️ ' + mensagem))
     bus.on('sala:saiu-jogador', () => this.status('um jogador saiu da sala'))
@@ -69,20 +72,16 @@ export class Lobby {
   async criar () {
     this.status('criando sala…')
     try {
-      const pedido = this.el.codigoNovo.value.trim()
       const codigo = await sala.criar({
         nome: this.el.nome.value.trim() || 'Anfitrião',
         champId: this.champIdAtual,
         tipo: this.tipo,
-        codigo: pedido,
         cheats: this.cheatsEscolhido,
         modoJogo: this.modoEscolhido
       })
       this.mostrarSala(codigo)
-      const avisoCodigo = (pedido && codigo !== pedido.toUpperCase().replace(/[^A-Z0-9]/g, ''))
-        ? `(o código "${pedido}" não valia — precisa de 3 a 8 letras/números — então sorteei ${codigo})`
-        : ''
-      this.status(`sala ${codigo} criada! passe o código pros seus amigos 🎉 ${avisoCodigo}`)
+      this.el.link.textContent = this.linkConvite
+      this.status(`sala ${codigo} criada! passe o código (ou o link) pros seus amigos 🎉`)
     } catch (e) {
       this.status('⚠️ não deu pra criar a sala: ' + e.message)
     }
@@ -93,12 +92,14 @@ export class Lobby {
     if (codigo.length < 3) return this.status('⚠️ digite o código da sala')
     this.status('entrando…')
     try {
+      this.el.diag.textContent = ''
       await sala.entrar(codigo, {
         nome: this.el.nome.value.trim(),
         champId: this.champIdAtual,
         tipo: this.tipo
       })
       this.mostrarSala(codigo)
+      this.el.link.textContent = this.linkConvite
       this.status('conectado! esperando o anfitrião começar…')
     } catch (e) {
       this.status('⚠️ ' + (e.message || 'não achei essa sala'))
@@ -109,6 +110,41 @@ export class Lobby {
     const txt = sala.codigo || ''
     if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {})
     this.status('código ' + txt + ' copiado ✅')
+  }
+
+  get linkConvite () {
+    return location.origin + location.pathname + '?sala=' + (sala.codigo || '')
+  }
+
+  copiarLink () {
+    const url = this.linkConvite
+    if (navigator.clipboard) navigator.clipboard.writeText(url).catch(() => {})
+    if (navigator.share) navigator.share({ title: 'Crazy Royale Champions', text: 'Bora jogar comigo!', url }).catch(() => {})
+    this.status('link copiado ✅ — mande no WhatsApp que já entra direto')
+  }
+
+  /** Diz se esta rede consegue fazer WebRTC (a causa nº 1 de "não funcionou"). */
+  async testar () {
+    this.status('🔍 testando a conexão desta rede…')
+    const r = await testarConexao()
+    const linha = [
+      r.host ? '✅ rede local' : '❌ rede local',
+      r.stun ? '✅ IP público (STUN)' : '❌ IP público (STUN)',
+      r.turn ? '✅ retransmissor (TURN)' : '⚠️ retransmissor (TURN)'
+    ].join(' · ')
+    const veredito = (r.stun || r.turn)
+      ? (r.turn ? 'Tudo certo — dá pra jogar online.' : 'Deve funcionar na maioria das redes.')
+      : 'Esta rede está bloqueando o jogo online. Tente o 4G do celular ou outra rede.'
+    this.status(linha + ' — ' + veredito)
+    this.el.diag.textContent = r.detalhe.join(' · ')
+  }
+
+  /** Entrada automática por link (?sala=CODIGO). */
+  async entrarPorLink (codigo) {
+    this.el.codigo.value = codigo
+    this.mostrar()
+    this.status('entrando na sala ' + codigo + ' pelo link…')
+    await this.entrar()
   }
 
   definirCampeao (champId) {

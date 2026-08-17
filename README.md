@@ -65,7 +65,7 @@ menor do chefão do online.
 | Pancada em área | 150 de dano, raio 12, a cada 8s | 220 de dano, raio 16, a cada 7s |
 | Capangas | 2 a cada 25s | 3 a cada 22s |
 | Estádio | 1,5x (84×126) | 6x (336×504) |
-| Tempo | 7 min | 10 min |
+| Tempo | 99 min e 99 s | 99 min e 99 s |
 
 Os dois usam o mesmo código (`src/game/boss.js`); o solo só sobrepõe números via
 `CONFIG.bossSolo`. Os COMs aliados focam o chefão (e desviam pros capangas que chegam perto).

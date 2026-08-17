@@ -91,7 +91,7 @@ export const BASE_CONFIG = {
   boss: {                     // 🐍 MODO BOSS (online): 12 jogadores x 1 chefão gigante
     jogadores: 12,
     multiplicadorArenaExtra: 3, // 3x o estádio do online normal (= 6x o offline)
-    duracaoSeg: 600,
+    duracaoSeg: 6039,           // 99 min e 99 s, igual aos outros modos
     vidaBase: 9000,
     vidaPorJogador: 1200,
     escala: 5.5,                // tamanho do bicho
@@ -112,7 +112,7 @@ export const BASE_CONFIG = {
   bossSolo: {                 // 🐍 MODO BOSS NORMAL (offline): você + 5 COMs x 1 chefão
     jogadores: 6,             // você + 5 COMs no seu time
     multiplicadorArena: 1.5,  // estádio um pouco maior que o normal, pra caber o bicho
-    duracaoSeg: 420,
+    duracaoSeg: 6039,         // 99 min e 99 s, igual aos outros modos
     vidaBase: 4200,
     vidaPorJogador: 700,
     escala: 4.2,              // um pouco menor que o chefão do online (5.5)

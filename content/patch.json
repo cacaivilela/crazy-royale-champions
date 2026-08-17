@@ -1,13 +1,19 @@
 {
-  "versao": "1.1.0",
+  "versao": "1.1.1",
   "notas": [
-    "Partida agora dura 99 min e 99 s.",
-    "Dino Rex virou o melhor campeão do jogo.",
+    "Todos os modos agora duram 99 min e 99 s (inclusive os dois modos boss).",
+    "Dino Rex é o melhor campeão do jogo.",
     "Correções no multijogador online (tiros, marcação, resultado e feed)."
   ],
   "recarregar": false,
   "config": {
     "partida": {
+      "duracaoSeg": 6039
+    },
+    "boss": {
+      "duracaoSeg": 6039
+    },
+    "bossSolo": {
       "duracaoSeg": 6039
     }
   },

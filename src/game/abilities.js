@@ -68,7 +68,7 @@ export function usarHabilidade (match, unidade, slot, ponto) {
     default: console.warn('[hab] tipo desconhecido:', hab.tipo)
   }
   if (unidade.ehJogador) audio.habilidade(hab.tipo)
-  match.bus.emit('hab:usada', { unidade, hab, slot })
+  match.bus.emit('hab:usada', { unidade, hab, slot, ponto: ponto ? ponto.clone() : null })
   return true
 }
 
@@ -203,6 +203,7 @@ export function atacarBasico (match, unidade, alvo) {
     const cadencia = unidade.cadencia * (1 + unidade.valorStatus('cadencia'))
     unidade.ataqueCd = 1 / Math.max(0.2, cadencia)
   }
+  if (!match.modoRemoto) unidade.ultimoTiroAlvo = alvo    // vai no snapshot pro cliente ver o tiro
   unidade.dir.subVectors(alvo.pos, unidade.pos).setY(0).normalize()
 
   if (unidade.ehJogador) audio.tiro()

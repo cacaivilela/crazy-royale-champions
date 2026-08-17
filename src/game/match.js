@@ -191,6 +191,24 @@ export class Match {
     this._offs.push(bus.on('unidade:morreu', ({ alvo, assassino }) => {
       if (alvo.ehSelvagem) this.selvagens.aoMorrer(alvo, assassino)
       if (assassino === this.jogador || alvo === this.jogador) this.camera.sacudir(0.7)
+      if (this.rede && !this.modoRemoto) {
+        this.rede.enviarParaTodos({
+          t: 'evt', tipo: 'morte',
+          i: this.unidades.indexOf(alvo),
+          por: assassino ? this.unidades.indexOf(assassino) : -1
+        })
+      }
+    }))
+    this._offs.push(bus.on('marcou', ({ unidade, pontos, dobro }) => {
+      if (!this.rede || this.modoRemoto) return
+      this.rede.enviarParaTodos({ t: 'evt', tipo: 'marcou', i: this.unidades.indexOf(unidade), pontos, dobro })
+    }))
+    this._offs.push(bus.on('objetivo', ({ texto }) => {
+      if (this.rede && !this.modoRemoto && !this._repassando) {
+        this._repassando = true
+        this.rede.enviarParaTodos({ t: 'evt', tipo: 'objetivo', texto })
+        this._repassando = false
+      }
     }))
     // live update: recalcula status de todo mundo na hora
     this._offs.push(bus.on('patch:aplicado', () => {
@@ -198,11 +216,11 @@ export class Match {
       this.camera.redimensionar()
     }))
     // repassa habilidades pros clientes verem o efeito
-    this._offs.push(bus.on('hab:usada', ({ unidade, slot }) => {
+    this._offs.push(bus.on('hab:usada', ({ unidade, slot, ponto }) => {
       if (!this.rede || this.modoRemoto) return
       const i = this.unidades.indexOf(unidade)
       if (i < 0) return
-      const alvo = this.miraAtual || unidade.pos
+      const alvo = ponto || unidade.pos.clone().add(unidade.dir)   // ponto REAL de quem lançou
       this.rede.enviarParaTodos({ t: 'fx', i, slot, ax: +alvo.x.toFixed(1), az: +alvo.z.toFixed(1) })
     }))
 
@@ -286,6 +304,7 @@ export class Match {
       // ---- CLIENTE ONLINE: manda input, aplica o estado do host ----
       this._enviarComandoAoHost(dt)
       this._aplicarSnapshot(dt)
+      this._checarFimRemoto()
       const cmd = this._comandoLocal()
       this._preverMovimentoLocal(cmd, dt)
     } else if (!this.acabou) {
@@ -393,7 +412,10 @@ export class Match {
     if (!u || u.morto) return
     if ((cmd.len || 0) > 0.08) u.mover(cmd.mx, cmd.mz, dt)
     const mira = new THREE.Vector3(cmd.ax, 0, cmd.az)
-    this.alvoAtual = this._alvoDeAtaque(u, mira)
+    const alvo = this._alvoDeAtaque(u, mira)
+    this.alvoAtual = alvo
+    // dispara o visual na hora (o dano de verdade acontece no host)
+    if (alvo && cmd.atirar && !u.canalizando) atacarBasico(this, u, alvo)
   }
 
   // ---------------- rede: cliente -> host ----------------
@@ -434,11 +456,19 @@ export class Match {
       tm: r2(this.decorrido),
       pa: this.placar.A, pb: this.placar.B,
       fim: this.acabou ? 1 : 0,
-      u: this.unidades.map(u => [
-        r2(u.pos.x), r2(u.pos.z), r2(u.dir.x), r2(u.dir.z),
-        Math.round(u.vida), u.nivel, u.tinta, Math.round(u.escudo),
-        (u.morto ? 1 : 0) | (u.canalizando ? 2 : 0) | (u.temStatus('invisivel') ? 4 : 0)
-      ]),
+      u: this.unidades.map(u => {
+        const tiro = u.ultimoTiroAlvo ? this.unidades.indexOf(u.ultimoTiroAlvo) : -1
+        u.ultimoTiroAlvo = null
+        const canal = u.canalizando
+          ? Math.round((1 - u.canalizando.restante / u.canalizando.total) * 100)
+          : (u.recall ? -Math.round((1 - u.recall.restante / u.recall.total) * 100) : 0)
+        return [
+          r2(u.pos.x), r2(u.pos.z), r2(u.dir.x), r2(u.dir.z),
+          Math.round(u.vida), u.nivel, u.tinta, Math.round(u.escudo),
+          (u.morto ? 1 : 0) | (u.canalizando ? 2 : 0) | (u.temStatus('invisivel') ? 4 : 0),
+          tiro, canal
+        ]
+      }),
       b: this.arena.baldoes.map(b => [Math.round(b.acumulado), b.quebrado ? 1 : 0])
     }
   }
@@ -460,8 +490,23 @@ export class Match {
         u.grupo.visible = !morto
         if (morto) this.efeitosVisuais.explosao(u.pos, u.cor)
       }
-      u.canalizandoRemoto = !!(flags & 2)
       u.recalcular()
+
+      // marcação/recall: mostra a barrinha no cliente também
+      const canal = d[10] || 0
+      if (canal > 0) u.canalizando = { total: 1, restante: 1 - canal / 100 }
+      else u.canalizando = null
+      if (canal < 0) u.recall = { total: 1, restante: 1 + canal / 100 }
+      else if (u !== this.jogador) u.recall = null
+
+      // tiro básico dos outros: só o visual (o dano é do host)
+      if (d[9] >= 0 && !morto) {
+        const alvo = this.unidades[d[9]]
+        if (alvo && !alvo.morto && u !== this.jogador) {
+          u.ataqueCd = 0
+          atacarBasico(this, u, alvo)
+        }
+      }
     })
     snap.b.forEach((d, i) => {
       const b = this.arena.baldoes[i]
@@ -470,16 +515,11 @@ export class Match {
       b.acumulado = d[0]; b.quebrado = !!d[1]
       if (mudou) this.arena.atualizarVisualBaldao(b)
     })
-    if (snap.fim && !this.acabou) {
-      this.acabou = true
-      bus.emit('partida:fim', {
-        venceu: snap.pa === snap.pb ? 'empate' : (snap.pa > snap.pb ? 'A' : 'B'),
-        motivo: 'partida encerrada', placar: { A: snap.pa, B: snap.pb },
-        jogador: {
-          nome: this.jogador.nome, emoji: this.jogador.emoji, nivel: this.jogador.nivel,
-          abates: this.jogador.abates, mortes: this.jogador.mortes, tinta: this.jogador.tintaMarcada
-        }
-      })
+    // O host encerrou. O resultado oficial vem na mensagem 'fim' — aqui só
+    // anotamos o horário pra ter um plano B caso ela não chegue.
+    if (snap.fim && !this.acabou && this._fimDesde == null) {
+      this._fimDesde = this.tempo
+      this._fimFallback = { placar: { A: snap.pa, B: snap.pb } }
     }
   }
 
@@ -628,6 +668,7 @@ export class Match {
         abates: this.jogador.abates, mortes: this.jogador.mortes, tinta: this.jogador.tintaMarcada
       }
     }
+    if (this.rede && !this.modoRemoto) this.rede.enviarParaTodos({ t: 'fim', res: resultado })
     bus.emit('partida:fim', resultado)
   }
 
@@ -640,13 +681,70 @@ export class Match {
     else if (this.tempoRestante <= 0) { venceu = 'B'; motivo = 'o tempo acabou e o chefão sobreviveu' }
     if (!venceu) return
     this.acabou = true
-    bus.emit('partida:fim', {
+    const resBoss = {
       venceu, motivo, placar: { ...this.placar },
       jogador: {
         nome: this.jogador.nome, emoji: this.jogador.emoji, nivel: this.jogador.nivel,
         abates: this.jogador.abates, mortes: this.jogador.mortes, tinta: this.jogador.tintaMarcada
       }
+    }
+    if (this.rede && !this.modoRemoto) this.rede.enviarParaTodos({ t: 'fim', res: resBoss })
+    bus.emit('partida:fim', resBoss)
+  }
+
+  /** Cliente: se a mensagem de fim se perder, encerra pelo placar depois de 2s. */
+  _checarFimRemoto () {
+    if (this.acabou || this._fimDesde == null) return
+    if (this.tempo - this._fimDesde < 2) return
+    const p = this._fimFallback.placar
+    this.receberFim({
+      res: {
+        venceu: p.A === p.B ? 'empate' : (p.A > p.B ? 'A' : 'B'),
+        motivo: 'partida encerrada', placar: p
+      }
     })
+  }
+
+  /** Cliente: o host mandou o resultado final (placar, quem ganhou, motivo). */
+  receberFim ({ res }) {
+    if (this.acabou) return
+    this.acabou = true
+    const meu = this.jogador
+    bus.emit('partida:fim', {
+      ...res,
+      jogador: {
+        nome: meu.nome, emoji: meu.emoji, nivel: meu.nivel,
+        abates: meu.abates, mortes: meu.mortes, tinta: meu.tintaMarcada
+      }
+    })
+  }
+
+  /** Cliente: avisos que aconteceram no host (abate, gol, objetivo). */
+  receberEvento (msg) {
+    if (msg.tipo === 'morte') {
+      const alvo = this.unidades[msg.i]
+      const por = msg.por >= 0 ? this.unidades[msg.por] : null
+      if (alvo) bus.emit('unidade:morreu', { alvo, assassino: por })
+    } else if (msg.tipo === 'marcou') {
+      const u = this.unidades[msg.i]
+      if (u) bus.emit('marcou', { unidade: u, pontos: msg.pontos, dobro: !!msg.dobro, baldao: null })
+    } else if (msg.tipo === 'objetivo') {
+      bus.emit('objetivo', { texto: msg.texto })
+    }
+  }
+
+  /** Host: quem largou a partida no meio vira COM. */
+  virarCom (id) {
+    const u = this.remotos.get(id)
+    if (!u) return null
+    this.remotos.delete(id)
+    this.comandos.delete(id)
+    u.controle = 'com'
+    u.nome = u.nome + ' (COM)'
+    this.bots.push(new BotBrain(this, u, { lane: this.bots.length % 2 === 0 ? -1 : 1 }))
+    bus.emit('objetivo', { texto: `🤖 ${u.nome} saiu — um COM assumiu` })
+    if (this.rede) this.rede.enviarParaTodos({ t: 'evt', tipo: 'objetivo', texto: `🤖 alguém saiu — um COM assumiu` })
+    return u
   }
 
   /** Cliente: o host invocou capangas do chefão. */

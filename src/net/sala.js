@@ -193,7 +193,10 @@ export class Sala {
       if (this.souHost) {
         this.jogadores = this.jogadores.filter(j => j.id !== id)
         this._avisarLobby()
-        if (this.match) this.match.comandos.delete(id)
+        if (this.match) {
+          this.match.comandos.delete(id)
+          if (this.iniciada) this.match.virarCom(id)      // ninguém fica de estátua
+        }
         bus.emit('sala:saiu-jogador', { id })
         return
       }
@@ -247,6 +250,8 @@ export class Sala {
       else if (msg.t === 'fx') this.match.receberEfeito(msg)
       else if (msg.t === 'selvagem') this.match.receberSelvagem(msg)
       else if (msg.t === 'capangas') this.match.receberCapangas(msg)
+      else if (msg.t === 'fim') this.match.receberFim(msg)
+      else if (msg.t === 'evt') this.match.receberEvento(msg)
     }
   }
 }

@@ -70,6 +70,13 @@ menor do chefão do online.
 Os dois usam o mesmo código (`src/game/boss.js`); o solo só sobrepõe números via
 `CONFIG.bossSolo`. Os COMs aliados focam o chefão (e desviam pros capangas que chegam perto).
 
+### Como o online se mantém em sincronia
+
+O host é a única fonte de verdade: vida, placar, abates e fim de partida vêm dele.
+Os clientes mandam input (20 Hz), recebem snapshots (15 Hz) e reproduzem localmente só o
+visual — tiro básico, efeito de habilidade, barra de marcação. Quem sai no meio da partida
+tem o campeão assumido por um COM.
+
 ## Cheats 🎃
 
 Cada partida (ou sala) escolhe: **🚫 nenhum**, **⌨️ escritos** (aperte <kbd>T</kbd> e digite) ou

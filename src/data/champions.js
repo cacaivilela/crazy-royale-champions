@@ -57,15 +57,14 @@ export const BASE_CHAMPIONS = [
   },
   {
     id: 'dino-rex', nome: 'Dino Rex', emoji: '🦖', role: 'defensor', cor: 0x4caf50, forma: 'dino',
-    lore: 'Extinto? Só se for o time inimigo.',
-    stats: { vida: 900, vidaNivel: 115, ataque: 28, ataqueNivel: 5.0, alcance: 5.0, cadencia: 0.9, defesa: 18, velocidade: 7.8 },
+    lore: 'O REI do torneio: extinto uma vez, invicto desde então. 🏆',
+    stats: { vida: 1180, vidaNivel: 145, ataque: 38, ataqueNivel: 8.5, alcance: 7.2, cadencia: 1.25, defesa: 30, velocidade: 8.9 },
     habilidades: [
-      { key: 'Q', nome: 'Rugido Jurássico', icone: '🗣️', tipo: 'area', cooldown: 9, raio: 7, dano: 55, danoNivel: 14, lentidao: 0.4, duracaoEfeito: 2, ticks: 1, intervalo: 0.1 },
-      { key: 'E', nome: 'Rabada', icone: '🌀', tipo: 'cone', cooldown: 7, alcance: 7, angulo: 1.6, dano: 80, danoNivel: 17, empurrao: 5 }
+      { key: 'Q', nome: 'Rugido Jurássico', icone: '🗣️', tipo: 'area', cooldown: 6, raio: 9, dano: 110, danoNivel: 26, lentidao: 0.55, duracaoEfeito: 3, ticks: 1, intervalo: 0.1 },
+      { key: 'E', nome: 'Rabada Devastadora', icone: '🌀', tipo: 'cone', cooldown: 5, alcance: 9, angulo: 1.9, dano: 140, danoNivel: 30, golpes: 2, empurrao: 7 }
     ],
-    ultimate: { key: 'R', nome: 'Estampida', icone: '🦕', tipo: 'dash', cooldown: 56, distancia: 18, dano: 160, danoNivel: 35, empurrao: 6, escudo: 250, imparavel: true }
-  }
-  ,
+    ultimate: { key: 'R', nome: 'Estampida', icone: '🦕', tipo: 'dash', cooldown: 38, distancia: 22, dano: 320, danoNivel: 60, empurrao: 8, escudo: 500, imparavel: true, roubaVida: 0.35, duracaoEfeito: 6 }
+  },
   {
     id: 'fantasminha', nome: 'Fantasminha', emoji: '👻', role: 'assassino', cor: 0xf0f0f0, forma: 'fantasma',
     lore: 'Morreu de rir e continuou na partida.',

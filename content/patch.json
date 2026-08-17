@@ -1,19 +1,26 @@
 {
-  "versao": "1.0.0",
+  "versao": "1.1.0",
   "notas": [
-    "Boilerplate inicial do Crazy Royale Champions.",
-    "Edite este arquivo e mude a 'versao' para aplicar um patch AO VIVO, sem recarregar o jogo."
+    "Partida agora dura 99 min e 99 s.",
+    "Dino Rex virou o melhor campeão do jogo.",
+    "Correções no multijogador online (tiros, marcação, resultado e feed)."
   ],
   "recarregar": false,
   "config": {
     "partida": {
-      "duracaoSeg": 360
+      "duracaoSeg": 6039
     }
   },
   "campeoes": {
     "bananildo": {
-      "stats": { "velocidade": 9.2 },
-      "habilidades": { "Q": { "cooldown": 6 } }
+      "stats": {
+        "velocidade": 9.2
+      },
+      "habilidades": {
+        "Q": {
+          "cooldown": 6
+        }
+      }
     }
   },
   "novosCampeoes": []

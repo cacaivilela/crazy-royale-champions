@@ -127,8 +127,12 @@ export class Hud {
     this.el.scoreB.textContent = m.placar.B
 
     const rest = Math.ceil(m.tempoRestante)
-    const mm = Math.floor(rest / 60), ss = String(rest % 60).padStart(2, '0')
-    this.el.timer.textContent = `${mm}:${ss}`
+    // o relógio para em 99 minutos: os segundos que sobram viram 99:60…99:99
+    // (a partir de 99:59 volta a ser a conta normal, sem pulo nenhum)
+    let mm = Math.floor(rest / 60)
+    let ss = rest % 60
+    if (rest > 5999) { mm = 99; ss = rest - 5940 }
+    this.el.timer.textContent = `${mm}:${String(ss).padStart(2, '0')}`
     this.el.timer.classList.toggle('urgente', rest <= CONFIG.partida.tempoFinalSeg)
 
     const frac = Math.max(0, p.vida / p.vidaMax)

@@ -165,7 +165,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 // ---------------- console de desenvolvimento ----------------
 // No devtools: CRC.patch({ versao:'9.9', campeoes:{ 'bananildo':{ stats:{ ataque: 999 } } } })
 window.CRC = {
-  CONFIG, CHAMPIONS, PATCH, live, sala, match: null,
+  CONFIG, CHAMPIONS, PATCH, live, sala, hud, minimapa, match: null,
   patch: (p) => applyPatch(p, 'forcado'),
   reset: resetToBase,
   checar: () => live.checar(),

@@ -6,7 +6,7 @@ export const BASE_CONFIG = {
   versao: '1.0.0',
 
   partida: {
-    duracaoSeg: 360,          // 6 minutos
+    duracaoSeg: 6039,         // 99 min e 99 s (99*60 + 99 = 6039 segundos)
     tempoFinalSeg: 60,        // último minuto vale dobro
     multiplicadorFinal: 2,
     jogadoresPorTime: 3,

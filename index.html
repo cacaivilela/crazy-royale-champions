@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Crazy Royale Champions 🏆</title>
+  <meta name="description" content="MOBA 3D de arena do universo Crazy Royale — marque tinta no baldão inimigo!" />
+  <link rel="stylesheet" href="./src/style.css" id="app-style" />
+  <link rel="manifest" href="./public/manifest.webmanifest" />
+  <link rel="icon" href="./public/icon.svg" />
+  <link rel="apple-touch-icon" href="./public/icon.svg" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Crazy Royale Champions" />
+
+  <!-- three.js vendorizado: zero build, roda direto no navegador e no GitHub Pages -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <!-- ====================== MENU ====================== -->
+    <div id="menu" class="screen">
+      <div class="menu-bg"></div>
+
+      <header class="title">
+        <h1>CRAZY ROYALE <span>CHAMPIONS</span></h1>
+        <p class="subtitle">MOBA de arena 3D do multiverso maluco — 3v3, colete tinta e marque no baldão inimigo! 🎨</p>
+        <p class="franchise">Parte da franquia <a href="https://cacaivilela.github.io/crazy-royale/" target="_blank" rel="noopener">Crazy Royale</a></p>
+      </header>
+
+      <div class="mode-select" id="mode-select">
+        <button class="mode-btn active" data-mode="ranked">🏆 Partida Rápida (3v3)</button>
+        <button class="mode-btn" data-mode="treino">🎯 Treino Livre</button>
+        <button class="mode-btn" data-mode="boss">🐍 Modo Boss (você + 5 COMs)</button>
+        <button class="mode-btn" data-mode="caos">🌀 Modo Caos (cooldown -50%)</button>
+      </div>
+
+      <section class="picker">
+        <h2>Escolha seu campeão <small id="champ-count"></small></h2>
+        <div id="champ-grid" class="grid"></div>
+      </section>
+
+      <div class="loadout" id="champ-detail"></div>
+
+      <div class="cheat-select">
+        <span>Cheats:</span>
+        <button class="cheat-opt active" data-cheat="nenhum">🚫 Nenhum</button>
+        <button class="cheat-opt" data-cheat="escrita">⌨️ Escritos (T)</button>
+        <button class="cheat-opt" data-cheat="audio">🎤 De áudio</button>
+      </div>
+
+      <div class="menu-actions">
+        <button id="btn-play" class="play-btn">▶ JOGAR</button>
+        <button id="btn-online" class="online-btn">🌐 JOGAR ONLINE</button>
+        <button id="btn-roleta" class="ghost-btn">🎡 Roleta Habilidosa</button>
+        <button id="btn-help" class="ghost-btn">❓ Como jogar</button>
+        <button id="btn-patch" class="ghost-btn">📡 Notas do patch</button>
+      </div>
+
+      <footer class="menu-foot">
+        <span id="patch-badge" class="patch-badge">patch —</span>
+        <span class="live-dot" id="live-dot" title="Live update"></span>
+        <span id="live-label">offline</span>
+      </footer>
+    </div>
+
+    <!-- ====================== JOGO ====================== -->
+    <div id="game" class="screen hidden">
+      <canvas id="canvas"></canvas>
+
+      <!-- Barra do chefão (modo boss) -->
+      <div id="boss-hud" class="hidden">
+        <div class="boss-nome"><span>👹</span><b>BALDÃO SUPREMO</b><i id="boss-pct">100%</i></div>
+        <div class="boss-barra"><i id="boss-fill"></i></div>
+      </div>
+
+      <!-- HUD superior -->
+      <div id="hud-top">
+        <div class="team-score team-a"><span class="tag">TINTAS</span><strong id="score-a">0</strong></div>
+        <div id="match-timer">6:00</div>
+        <div class="team-score team-b"><strong id="score-b">0</strong><span class="tag">TINTAS</span></div>
+      </div>
+      <div id="objective-banner" class="hidden"></div>
+
+      <!-- HUD do jogador -->
+      <div id="hud-player">
+        <div class="portrait"><span id="p-emoji">🍌</span><b id="p-level">1</b></div>
+        <div class="bars">
+          <div class="bar hp"><i id="p-hp-fill"></i><span id="p-hp-text">100/100</span></div>
+          <div class="bar xp"><i id="p-xp-fill"></i></div>
+        </div>
+        <div class="carry" id="p-carry" title="Tinta carregada">🎨 <b>0</b></div>
+      </div>
+
+      <!-- Habilidades -->
+      <div id="hud-skills"></div>
+
+      <!-- Feedback de dano / pausa -->
+      <div id="hurt"></div>
+      <div id="pause" class="hidden"><b>PAUSADO</b><span>Esc para continuar</span></div>
+      <button id="btn-pausa" title="Pausar (Esc)">⏸</button>
+      <div id="hint">
+        <kbd>WASD</kbd> andar · <kbd>Espaço</kbd> atirar · <kbd>Q</kbd><kbd>E</kbd><kbd>R</kbd> habilidades ·
+        <kbd>X</kbd> extra · <kbd>F</kbd> marcar tinta · <kbd>B</kbd> voltar pra base
+      </div>
+
+      <!-- Minimapa, feed e status -->
+      <canvas id="minimap" width="180" height="180"></canvas>
+      <div id="killfeed"></div>
+      <div id="toasts"></div>
+      <div id="respawn" class="hidden"></div>
+      <div id="fps"></div>
+
+      <!-- Controles touch -->
+      <div id="touch-layer" class="hidden">
+        <div id="joystick"><i></i></div>
+        <div id="touch-botoes">
+          <button class="tbtn" id="t-recall" title="Voltar pra base">🏠</button>
+          <button class="tbtn" id="t-marcar" title="Marcar tinta">🎨</button>
+          <button class="tbtn grande" id="t-atacar" title="Atirar">🔫</button>
+        </div>
+      </div>
+
+      <!-- Caixinha de cheat (modo escrita) -->
+      <div id="cheat-box" class="hidden">
+        <h4>⌨️ CÓDIGO MALUCO</h4>
+        <input id="cheat-input" maxlength="24" placeholder="digite e dê Enter…" />
+        <p id="cheat-aviso"></p>
+        <ul id="cheat-lista"></ul>
+        <small>Esc para fechar</small>
+      </div>
+
+      <!-- Fim de partida -->
+      <div id="endcard" class="hidden">
+        <h2 id="end-title">VITÓRIA!</h2>
+        <p id="end-sub"></p>
+        <div id="end-stats"></div>
+        <button id="btn-again" class="play-btn">▶ JOGAR DE NOVO</button>
+        <button id="btn-menu" class="ghost-btn">🏠 Menu</button>
+      </div>
+    </div>
+
+    <!-- ====================== ROLETA HABILIDOSA ====================== -->
+    <div id="roleta" class="screen hidden">
+      <div class="menu-bg"></div>
+      <div class="roleta-box">
+        <h2>🎡 Roleta Habilidosa</h2>
+        <p class="roleta-sub">Gire e ganhe uma <b>habilidade extra</b> pro campeão que você está usando.</p>
+        <div class="roleta-topo">
+          <div id="roleta-campeao"></div>
+          <span id="roleta-atual"></span>
+        </div>
+        <div class="roleta-palco">
+          <div class="roleta-seta">▼</div>
+          <canvas id="roleta-canvas" width="340" height="340"></canvas>
+        </div>
+        <div id="roleta-veloc" class="roleta-veloc"><b>—</b> km/h <span>· aperte GIRAR</span></div>
+        <button id="btn-girar" class="play-btn">🎲 GIRAR</button>
+        <div id="roleta-resultado"></div>
+        <div class="lobby-linha">
+          <button id="btn-tirar-extra" class="ghost-btn">🚫 tirar a extra</button>
+          <button id="btn-roleta-voltar" class="ghost-btn">🏠 voltar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================== LOBBY ONLINE ====================== -->
+    <div id="lobby" class="screen hidden">
+      <div class="menu-bg"></div>
+      <div class="lobby-box">
+        <h2>🌐 Multijogador online</h2>
+        <p class="lobby-sub">Até <b>6 jogadores</b> no mesmo time contra <b>6 COMs</b> — e o estádio fica <b>2x maior</b>.</p>
+
+        <div id="lobby-entrada">
+          <label>Seu nome
+            <input id="lobby-nome" maxlength="14" placeholder="Anônimo" />
+          </label>
+          <div class="cheat-select" id="lobby-modos">
+            <span>Modo:</span>
+            <button class="cheat-opt active" data-modo="normal">🏆 Normal — 6 vs 6 COMs</button>
+            <button class="cheat-opt" data-modo="boss">🐍 Modo Boss — 12 vs chefão</button>
+          </div>
+          <label>Código da sala (você escolhe!)
+            <input id="lobby-codigo-novo" maxlength="8" placeholder="ex.: 2610" class="codigo-input" />
+          </label>
+          <div class="cheat-select" id="lobby-cheats">
+            <span>Cheats da sala:</span>
+            <button class="cheat-opt active" data-cheat="nenhum">🚫 Nenhum</button>
+            <button class="cheat-opt" data-cheat="escrita">⌨️ Escritos</button>
+            <button class="cheat-opt" data-cheat="audio">🎤 De áudio</button>
+          </div>
+          <div class="lobby-linha">
+            <button id="btn-criar" class="play-btn">🎪 CRIAR SALA</button>
+          </div>
+          <div class="lobby-ou">ou entre com o código de um amigo</div>
+          <div class="lobby-linha">
+            <input id="lobby-codigo" maxlength="6" placeholder="CÓDIGO" class="codigo-input" />
+            <button id="btn-entrar" class="ghost-btn">ENTRAR</button>
+          </div>
+          <label class="lobby-check">
+            <input type="checkbox" id="lobby-local" /> sala local (só abas deste navegador — para testar)
+          </label>
+        </div>
+
+        <div id="lobby-sala" class="hidden">
+          <div class="codigo-box">
+            <span>CÓDIGO DA SALA</span>
+            <strong id="lobby-codigo-atual">—</strong>
+            <button id="btn-copiar" class="ghost-btn">📋 copiar</button>
+          </div>
+          <h3>Jogadores <small id="lobby-contagem"></small></h3>
+          <div id="lobby-jogadores" class="lobby-lista"></div>
+          <p class="lobby-dica" id="lobby-dica">Esperando gente entrar…</p>
+          <p class="lobby-dica" id="lobby-cheat-info"></p>
+          <div class="lobby-linha">
+            <button id="btn-comecar" class="play-btn" disabled>▶ COMEÇAR — completar time com COMs</button>
+          </div>
+          <div class="lobby-linha">
+            <button id="btn-trocar-champ" class="ghost-btn">🦸 trocar campeão</button>
+            <button id="btn-sair-sala" class="ghost-btn">✖ sair da sala</button>
+          </div>
+        </div>
+
+        <p id="lobby-status" class="lobby-status"></p>
+        <button id="btn-voltar-menu" class="ghost-btn">🏠 voltar ao menu</button>
+      </div>
+    </div>
+
+    <!-- ====================== MODAL ====================== -->
+    <div id="modal" class="hidden">
+      <div class="modal-box">
+        <button id="modal-close" class="modal-close">✕</button>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WebRTC pronto pra uso: broker público, sem servidor próprio -->
+  <script src="./vendor/peerjs.min.js"></script>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "versao": "1.0.0",
+  "notas": [
+    "Boilerplate inicial do Crazy Royale Champions.",
+    "Edite este arquivo e mude a 'versao' para aplicar um patch AO VIVO, sem recarregar o jogo."
+  ],
+  "recarregar": false,
+  "config": {
+    "partida": {
+      "duracaoSeg": 360
+    }
+  },
+  "campeoes": {
+    "bananildo": {
+      "stats": { "velocidade": 9.2 },
+      "habilidades": { "Q": { "cooldown": 6 } }
+    }
+  },
+  "novosCampeoes": []
+}

@@ -7,12 +7,14 @@
 // ============================================================
 import { BASE_CONFIG } from './config.js'
 import { BASE_CHAMPIONS } from './champions.js'
+import { BASE_NOVATOS } from './novatos.js'
 import { bus } from '../core/events.js'
 
 const clone = (o) => JSON.parse(JSON.stringify(o))
 
 export const CONFIG = clone(BASE_CONFIG)
-export const CHAMPIONS = clone(BASE_CHAMPIONS)
+// campeões da franquia + novatos exclusivos do Champions
+export const CHAMPIONS = clone([...BASE_CHAMPIONS, ...BASE_NOVATOS])
 
 export const PATCH = {
   versao: CONFIG.versao,
@@ -98,7 +100,7 @@ export function applyPatch (patch, origem = 'arquivo') {
 export function resetToBase () {
   deepMerge(CONFIG, clone(BASE_CONFIG))
   CHAMPIONS.length = 0
-  CHAMPIONS.push(...clone(BASE_CHAMPIONS))
+  CHAMPIONS.push(...clone([...BASE_CHAMPIONS, ...BASE_NOVATOS]))
   PATCH.versao = BASE_CONFIG.versao
   PATCH.notas = ['Reset para o balanceamento base.']
   PATCH.origem = 'reset'

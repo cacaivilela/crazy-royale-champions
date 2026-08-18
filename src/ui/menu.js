@@ -25,6 +25,7 @@ export class Menu {
     this.cheats = 'nenhum'
     this.el = {
       tela: $('#menu'), grid: $('#champ-grid'), contagem: $('#champ-count'),
+      gridNovatos: $('#novato-grid'), contagemNovatos: $('#novato-count'),
       detalhe: $('#champ-detail'), modos: $('#mode-select'),
       badge: $('#patch-badge'), dot: $('#live-dot'), label: $('#live-label')
     }
@@ -78,12 +79,16 @@ export class Menu {
 
   renderar () {
     const g = this.el.grid
+    const gn = this.el.gridNovatos
     g.innerHTML = ''
+    gn.innerHTML = ''
     if (!CHAMPIONS.some(c => c.id === this.champId)) this.champId = CHAMPIONS[0].id
-    for (const c of CHAMPIONS) {
+
+    const cartao = (c) => {
       const div = document.createElement('div')
-      div.className = 'card' + (c.id === this.champId ? ' sel' : '')
-      div.innerHTML = `<span class="emoji">${c.emoji}</span>
+      div.className = 'card' + (c.id === this.champId ? ' sel' : '') + (c.novato ? ' novato' : '')
+      div.innerHTML = `${c.novato ? '<span class="selo">NOVATO</span>' : ''}
+        <span class="emoji">${c.emoji}</span>
         <span class="nome">${c.nome}</span>
         <span class="role">${c.role}</span>`
       div.addEventListener('click', () => {
@@ -91,9 +96,15 @@ export class Menu {
         this.renderar()
         bus.emit('menu:campeao', { champId: c.id })
       })
-      g.appendChild(div)
+      return div
     }
-    this.el.contagem.textContent = `(${CHAMPIONS.length})`
+
+    const campeoes = CHAMPIONS.filter(c => !c.novato)
+    const novatos = CHAMPIONS.filter(c => c.novato)
+    for (const c of campeoes) g.appendChild(cartao(c))
+    for (const c of novatos) gn.appendChild(cartao(c))
+    this.el.contagemNovatos.textContent = `(${novatos.length})`
+    this.el.contagem.textContent = `(${campeoes.length})`
     this.el.badge.textContent = 'patch ' + PATCH.versao
     this._detalhe()
   }
@@ -124,7 +135,7 @@ export class Menu {
 
     this.el.detalhe.innerHTML = `
       <div class="loadout-card">
-        <span class="label">CAMPEÃO</span>
+        <span class="label">${c.novato ? '🆕 NOVATO (exclusivo do Champions)' : 'CAMPEÃO'}</span>
         <strong>${c.emoji} ${c.nome}</strong>
         <em>${c.role} — ${c.lore || ''}</em>
         ${extra ? `<span class="extra-tag">🎡 ${extra.icone} ${extra.nome}</span>` : ''}

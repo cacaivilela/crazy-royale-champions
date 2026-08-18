@@ -193,6 +193,15 @@ src/
   ui/                   menu, HUD e minimapa
 ```
 
+## Elenco
+
+- **18 campeões** vindos do Crazy Royale original (Bananildo, Tank Tonho, Dino Rex…)
+- **8 novatos exclusivos do Champions** (`src/data/novatos.js`): 🎸 Guitarrão, 🧊 Cubo Gelo,
+  🧁 Dona Cupcake, ⚡ Raiozinho, 🪁 Pipa Voadora, 🧲 Ímã Ivan, 🚦 Sinal Fechado e 🪩 Globo Disco.
+  Acabaram de chegar ao torneio: **os status são fraquinhos de propósito** (menos vida e dano,
+  recarga maior), mas cada um tem um truque próprio. Aparecem numa seção separada do menu,
+  com selo NOVATO.
+
 ## Criando conteúdo
 
 **Campeão novo:** copie um objeto em `src/data/champions.js`. As habilidades são declarativas —

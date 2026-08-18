@@ -437,6 +437,179 @@ export const FORMAS = {
     return { grupo: g, altura: 2.9 }
   },
 
+
+  // ============ FORMAS DOS NOVATOS (exclusivos do Champions) ============
+
+  // 🎸 guitarra elétrica ambulante
+  guitarra (cor) {
+    const g = new THREE.Group()
+    const mat = M(cor, { rough: 0.25, metal: 0.3 })
+    // corpo em formato de 8 (duas "barrigas" achatadas)
+    const barriga = (raio, y, escalaZ) => {
+      const m = add(g, new THREE.CylinderGeometry(raio, raio, 0.3, 20), mat, 0, y, 0, Math.PI / 2)
+      m.scale.set(1, 1, escalaZ)
+      return m
+    }
+    barriga(0.62, 0.85, 1)
+    barriga(0.48, 1.42, 1)
+    add(g, new THREE.BoxGeometry(0.95, 0.6, 0.31), mat, 0, 1.15)
+    // pickguard e captadores
+    add(g, new THREE.CylinderGeometry(0.3, 0.3, 0.34, 16), M(0xf7f0ff, { rough: 0.4 }), -0.12, 1.0, 0, Math.PI / 2)
+    add(g, new THREE.BoxGeometry(0.42, 0.12, 0.36), M(PRETO, { metal: 0.6 }), 0.05, 1.28)
+    add(g, new THREE.BoxGeometry(0.42, 0.12, 0.36), M(PRETO, { metal: 0.6 }), 0.05, 0.78)
+    // braço + trastes + cordas + cabeça
+    add(g, new THREE.BoxGeometry(0.26, 1.5, 0.18), M(0x6b4b16, { rough: 0.6 }), 0, 2.35, 0)
+    for (let i = 0; i < 6; i++) {
+      add(g, new THREE.BoxGeometry(0.26, 0.02, 0.19), M(0xdedeee, { metal: 0.9 }), 0, 1.85 + i * 0.24, 0)
+    }
+    for (let i = 0; i < 4; i++) {
+      add(g, new THREE.CylinderGeometry(0.01, 0.01, 2.3, 4), M(0xf7f7ff, { metal: 0.9 }), -0.08 + i * 0.055, 2.05, 0.1)
+    }
+    const cabeca = add(g, new THREE.BoxGeometry(0.36, 0.46, 0.16), M(cor, { rough: 0.3 }), 0, 3.25, 0)
+    cabeca.rotation.z = 0.12
+    for (let i = 0; i < 3; i++) {
+      for (const s2 of [-1, 1]) {
+        add(g, new THREE.CylinderGeometry(0.025, 0.025, 0.12, 6), M(0xdedeee, { metal: 0.9 }),
+          s2 * 0.2, 3.36 - i * 0.14, 0, 0, 0, Math.PI / 2)
+      }
+    }
+    olhos(g, 1.45, 0.35, 0.2, 0.12)
+    add(g, new THREE.TorusGeometry(0.13, 0.03, 6, 12, Math.PI), M(PRETO), 0, 1.2, 0.34, 0, 0, Math.PI)
+    pernas(g, PRETO, 0.28, 0.26, 0.42)
+    return { grupo: g, altura: 3.6 }
+  },
+
+  // 🧊 cubo de gelo
+  gelo (cor) {
+    const g = new THREE.Group()
+    const mat = M(cor, { rough: 0.08, metal: 0.1, opacity: 0.82, flat: true })
+    add(g, new THREE.BoxGeometry(1.3, 1.3, 1.3), mat, 0, 1.05)
+    add(g, new THREE.BoxGeometry(0.5, 0.5, 0.5), M(0xffffff, { rough: 0.05, opacity: 0.5 }), -0.3, 1.35, 0.3, 0.4, 0.3, 0)
+    for (const s of [-1, 1]) add(g, new THREE.ConeGeometry(0.16, 0.4, 4), mat, s * 0.5, 1.85, 0, 0, Math.PI / 4)
+    olhos(g, 1.15, 0.68, 0.24, 0.14)
+    add(g, new THREE.TorusGeometry(0.16, 0.04, 6, 12, Math.PI), M(PRETO), 0, 0.85, 0.68, 0, 0, Math.PI)
+    pernas(g, 0xbfefff, 0.22, 0.3, 0.4)
+    return { grupo: g, altura: 2.4 }
+  },
+
+  // 🧁 cupcake com cobertura
+  cupcake (cor) {
+    const g = new THREE.Group()
+    add(g, new THREE.CylinderGeometry(0.62, 0.46, 0.9, 16, 1), M(0xd9a066, { rough: 0.9 }), 0, 0.5)
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2
+      add(g, new THREE.BoxGeometry(0.1, 0.9, 0.06), M(0xf7c8d0, { rough: 0.85 }),
+        Math.cos(a) * 0.56, 0.5, Math.sin(a) * 0.56, 0, -a, 0)
+    }
+    for (let i = 0; i < 4; i++) {
+      const r = 0.62 - i * 0.14
+      add(g, new THREE.SphereGeometry(r, 14, 10), M(cor, { rough: 0.6 }), 0, 1.05 + i * 0.28, 0)
+    }
+    add(g, new THREE.SphereGeometry(0.16, 10, 8), M(0xd62828), 0, 2.1, 0)
+    add(g, new THREE.CylinderGeometry(0.02, 0.02, 0.2, 5), M(0x4caf50), 0, 2.28, 0, 0, 0, 0.3)
+    const conf = [0xffe14d, 0x38bdf8, 0x22c55e, 0xff6ec7]
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2
+      add(g, new THREE.BoxGeometry(0.07, 0.07, 0.16), M(conf[i % 4]),
+        Math.cos(a) * 0.45, 1.35 + Math.sin(i) * 0.2, Math.sin(a) * 0.45, i, a, 0)
+    }
+    olhos(g, 0.62, 0.5, 0.2, 0.12)
+    return { grupo: g, altura: 2.6 }
+  },
+
+  // ⚡ nuvem com raio
+  nuvem (cor) {
+    const g = new THREE.Group()
+    const mat = M(cor, { rough: 0.9 })
+    for (const [x, y, z, r] of [[0, 1.5, 0, 0.6], [-0.5, 1.35, 0.1, 0.45], [0.5, 1.4, -0.1, 0.5], [0.15, 1.75, 0.05, 0.42]]) {
+      add(g, new THREE.SphereGeometry(r, 14, 10), mat, x, y, z)
+    }
+    const raio = M(0xffe14d, { emissive: 0xffd400, ei: 1.6 })
+    add(g, new THREE.ConeGeometry(0.22, 0.7, 4), raio, 0.05, 0.75, 0, Math.PI)
+    add(g, new THREE.ConeGeometry(0.16, 0.5, 4), raio, -0.1, 0.35, 0)
+    olhos(g, 1.55, 0.52, 0.22, 0.13)
+    add(g, new THREE.TorusGeometry(0.14, 0.035, 6, 12, Math.PI), M(PRETO), 0, 1.3, 0.5, 0, 0, Math.PI)
+    return { grupo: g, altura: 2.4 }
+  },
+
+  // 🪁 pipa com rabiola
+  pipa (cor) {
+    const g = new THREE.Group()
+    const mat = M(cor, { rough: 0.5, flat: true })
+    const losango = new THREE.Shape()
+    losango.moveTo(0, 1.1); losango.lineTo(0.75, 0); losango.lineTo(0, -1.1); losango.lineTo(-0.75, 0); losango.lineTo(0, 1.1)
+    const geo = new THREE.ExtrudeGeometry(losango, { depth: 0.1, bevelEnabled: false })
+    add(g, geo, mat, 0, 1.55, 0)
+    add(g, new THREE.BoxGeometry(0.05, 2.2, 0.14), M(0x6b4b16), 0, 1.55, 0.08)
+    add(g, new THREE.BoxGeometry(1.5, 0.05, 0.14), M(0x6b4b16), 0, 1.55, 0.08)
+    const cores = [0xffe14d, 0x38bdf8, 0xf43f5e]
+    for (let i = 0; i < 5; i++) {
+      add(g, new THREE.BoxGeometry(0.24, 0.1, 0.05), M(cores[i % 3]), Math.sin(i) * 0.18, 0.42 - i * 0.09, -0.1, 0, 0, i * 0.5)
+    }
+    olhos(g, 1.75, 0.16, 0.2, 0.12)
+    add(g, new THREE.TorusGeometry(0.13, 0.03, 6, 12, Math.PI), M(PRETO), 0, 1.5, 0.16, 0, 0, Math.PI)
+    return { grupo: g, altura: 2.8 }
+  },
+
+  // 🧲 ímã de ferradura
+  ima (cor) {
+    const g = new THREE.Group()
+    const corpo = add(g, new THREE.TorusGeometry(0.6, 0.26, 10, 20, Math.PI), M(cor, { metal: 0.55, rough: 0.35 }), 0, 1.25)
+    corpo.rotation.z = 0
+    for (const s of [-1, 1]) {
+      add(g, new THREE.CylinderGeometry(0.26, 0.26, 0.6, 12), M(cor, { metal: 0.55 }), s * 0.6, 0.95, 0)
+      add(g, new THREE.CylinderGeometry(0.27, 0.27, 0.24, 12), M(0xdedeee, { metal: 0.85 }), s * 0.6, 0.63, 0)
+    }
+    olhos(g, 1.55, 0.3, 0.22, 0.12)
+    // faíscas magnéticas
+    for (let i = 0; i < 4; i++) {
+      add(g, new THREE.IcosahedronGeometry(0.09, 0), M(0x7cf5ff, { emissive: 0x2ad1ff, ei: 1.4 }),
+        (i % 2 ? 1 : -1) * 0.6, 0.42, (i < 2 ? 0.22 : -0.22))
+    }
+    pernas(g, 0x555079, 0.22, 0.3, 0.36)
+    return { grupo: g, altura: 2.3 }
+  },
+
+  // 🚦 semáforo
+  semaforo (cor) {
+    const g = new THREE.Group()
+    add(g, new THREE.CylinderGeometry(0.16, 0.22, 1.1, 10), M(0x555079, { metal: 0.5 }), 0, 0.55)
+    add(g, new THREE.BoxGeometry(0.7, 1.5, 0.5), M(cor, { rough: 0.6, metal: 0.2 }), 0, 1.85)
+    const luzes = [[0xf43f5e, 1.05], [0xfacc15, 0.55], [0x22c55e, 0.05]]
+    luzes.forEach(([c, dy], i) => {
+      add(g, new THREE.SphereGeometry(0.2, 12, 10), M(c, { emissive: c, ei: i === 0 ? 1.6 : 0.35 }), 0, 1.6 + dy, 0.26)
+      add(g, new THREE.CylinderGeometry(0.24, 0.26, 0.1, 12), M(0x2b2b3d), 0, 1.72 + dy, 0.3, Math.PI / 2)
+    })
+    add(g, new THREE.BoxGeometry(0.9, 0.12, 0.6), M(0x2b2b3d), 0, 2.68)
+    olhos(g, 2.75, 0.32, 0.2, 0.1)
+    pernas(g, 0x2b2b3d, 0.2, 0.22, 0.34)
+    return { grupo: g, altura: 3.1 }
+  },
+
+  // 🪩 globo de discoteca
+  globo (cor) {
+    const g = new THREE.Group()
+    const bola = add(g, new THREE.IcosahedronGeometry(0.75, 1),
+      M(0xe8e4ff, { metal: 0.9, rough: 0.08, flat: true, emissive: cor, ei: 0.35 }), 0, 1.6)
+    bola.castShadow = true
+    // espelhinhos claros + alguns coloridos, pra ler como globo de balada
+    const cores = [0xffffff, 0xffffff, 0x7cf5ff, 0xffe14d, 0xff8fc7, 0xffffff]
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2 * 1.6
+      const y = 1.6 + Math.cos(i * 0.9) * 0.58
+      const raio = Math.sqrt(Math.max(0.02, 0.62 - Math.pow(y - 1.6, 2)))
+      const c = cores[i % cores.length]
+      add(g, new THREE.BoxGeometry(0.19, 0.19, 0.04),
+        M(c, { metal: 1, rough: 0.02, flat: true, emissive: c, ei: 0.5 }),
+        Math.cos(a) * raio * 1.18, y, Math.sin(a) * raio * 1.18, 0, -a, 0)
+    }
+    add(g, new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), M(0x9aa7b0, { metal: 0.8 }), 0, 2.5)
+    add(g, new THREE.SphereGeometry(0.14, 10, 8), M(0xfacc15, { emissive: 0xfacc15, ei: 1.2 }), 0, 2.78)
+    olhos(g, 1.65, 0.7, 0.24, 0.13)
+    pernas(g, 0x555079, 0.3, 0.26, 0.5)
+    return { grupo: g, altura: 3.0 }
+  },
+
   // ---------- criaturas da selva ----------
   latinha (cor) {
     const g = new THREE.Group()

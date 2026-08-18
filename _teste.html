@@ -267,5 +267,65 @@
   <!-- WebRTC pronto pra uso: broker público, sem servidor próprio -->
   <script src="./vendor/peerjs.min.js"></script>
   <script type="module" src="./src/main.js"></script>
+
+  <script type="module">
+    import { CHAMPIONS } from '/src/data/runtime.js'
+    import { BASE_CHAMPIONS } from '/src/data/champions.js'
+    import { BASE_NOVATOS } from '/src/data/novatos.js'
+    const post = (t) => { fetch('http://127.0.0.1:8124/log', {method:'POST', body:t}).catch(()=>{}) }
+    const ok = (n,c,x='') => post((c?'OK  ':'FALHA ')+n+(x?' | '+x:''))
+    window.addEventListener('error', e => post('ERRO: ' + (e.message||e.type) + ' @ ' + (e.filename||'').split('/').pop() + ':' + (e.lineno||'')))
+    setTimeout(() => {
+      try {
+        const CRC = window.CRC
+        const novatos = CHAMPIONS.filter(c => c.novato)
+        ok('8 novatos no elenco', novatos.length === 8, novatos.map(n => n.emoji + n.nome).join(' '))
+        ok('nao existem no crazy royale original',
+           novatos.every(n => !BASE_CHAMPIONS.some(c => c.id === n.id)), 'todos exclusivos')
+        ok('total do elenco', CHAMPIONS.length === BASE_CHAMPIONS.length + BASE_NOVATOS.length,
+           BASE_CHAMPIONS.length + ' campeões + ' + BASE_NOVATOS.length + ' novatos = ' + CHAMPIONS.length)
+
+        // status: novatos são fraquinhos mesmo?
+        const poder = (c) => (c.stats.vida + c.stats.vidaNivel*8)/1000 +
+          ((c.stats.ataque + c.stats.ataqueNivel*8) * c.stats.cadencia)/50 + c.stats.defesa/60 + c.stats.velocidade/12
+        const campeoes = CHAMPIONS.filter(c => !c.novato)
+        const piorCampeao = Math.min(...campeoes.map(poder))
+        const melhorNovato = Math.max(...novatos.map(poder))
+        ok('todo novato e mais fraco que qualquer campeao', melhorNovato < piorCampeao,
+           'melhor novato=' + melhorNovato.toFixed(2) + ' | pior campeão=' + piorCampeao.toFixed(2))
+        post('· ' + novatos.map(n => n.nome + ' ' + poder(n).toFixed(2)).join(' · '))
+
+        // menu: seção separada com selo
+        const cardsNovatos = document.querySelectorAll('#novato-grid .card')
+        ok('grade propria no menu', cardsNovatos.length === 8, cardsNovatos.length + ' cartões')
+        ok('selo NOVATO', document.querySelectorAll('#novato-grid .selo').length === 8)
+        ok('campeoes seguem na grade deles', document.querySelectorAll('#champ-grid .card').length === 18)
+
+        // joga com cada novato: forma + habilidades
+        let falhas = []
+        for (const n of novatos) {
+          const card = [...document.querySelectorAll('#novato-grid .card')].find(el => el.querySelector('.nome').textContent === n.nome)
+          card.click()
+          if (!document.querySelector('#champ-detail').textContent.includes('NOVATO')) falhas.push('detalhe ' + n.id)
+          document.querySelector('#btn-play').click()
+          const m = CRC.match, p = m.jogador
+          const frame = (k) => { for (let i=0;i<k;i++){ m.atualizar(1/60); m.input.endFrame() } }
+          p.nivel = 9; p.recalcular()
+          const alvo = m.campeoesDoTime('B')[0]
+          alvo.pos.copy(p.pos); alvo.pos.x += 3; alvo.vidaMax = 1e6; alvo.vida = 1e6; alvo.defesa = 0
+          const v0 = alvo.vida
+          for (const sl of ['Q','E','R']) { p.cooldowns[sl] = 0; m._usarSlot(sl) }
+          frame(120)
+          const pecas = p.modelo.children.length
+          if (pecas < 4) falhas.push('forma ' + n.id)
+          post('· ' + n.emoji + ' ' + n.nome.padEnd(15) + ' peças=' + String(pecas).padStart(2) +
+               ' vida@9=' + p.vidaMax + ' dano das 3 habs=' + Math.round(v0 - alvo.vida))
+          m.destruir(); document.querySelector('#btn-menu').click()
+        }
+        ok('todos jogáveis com forma própria', falhas.length === 0, falhas.join(',') || 'sem falhas')
+        post('FIM')
+      } catch (e) { post('EXCEPTION: ' + e.message + ' || ' + (e.stack||'').split('\n')[1]) }
+    }, 1100)
+  </script>
 </body>
 </html>

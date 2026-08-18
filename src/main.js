@@ -50,6 +50,7 @@ const menu = new Menu({
 // ---------------- lobby online ----------------
 const lobby = new Lobby({
   champIdAtual: menu ? menu.champId : null,
+  input,
   aoVoltar: () => menu.mostrar(),
   aoTrocarCampeao: () => { lobby.esconder(); menu.mostrar(); menu.modoEscolhaOnline = true }
 })

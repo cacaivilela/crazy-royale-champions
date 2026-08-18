@@ -33,10 +33,21 @@ Sem servidor pra manter: WebRTC via broker público do PeerJS (`vendor/peerjs.mi
 O host simula a partida inteira e manda *snapshots* (15 Hz); os clientes mandam só o input (20 Hz) e
 interpolam o resto — quem manda na vida, no placar e nos abates é sempre o host.
 
+### 🕹️ Saguão: ninguém fica parado esperando
+
+Enquanto a sala enche, o lobby vira uma **pracinha 3D**: cada um anda com o campeão que escolheu e
+vê os outros da sala andando junto. <kbd>WASD</kbd>/setas (ou arrastar o dedo na tela) pra andar,
+<kbd>Shift</kbd> corre, <kbd>Espaço</kbd> pula — e o botão **🕹️ andar pelo saguão** encolhe o painel
+pra dar palco. Trocar de campeão troca o boneco na hora.
+
+A posição viaja pela mesma sala, em mensagens `sag` (12 por segundo andando, 2 parado) que o host
+repassa pra todo mundo; nada disso é simulado — é só enfeite, e some quando a partida começa.
+
 | arquivo | papel |
 |---|---|
 | `src/net/transporte.js` | WebRTC (PeerJS) **ou** BroadcastChannel (`sala local`, pra testar em 2 abas) |
 | `src/net/sala.js` | lobby, código, roster (humanos + COMs) e roteamento das mensagens |
+| `src/game/saguao.js` | a pracinha 3D do lobby (cena própria, leve, sem combate) |
 | `src/game/match.js` | `snapshot()`, `receberSnapshot()`, `receberComando()` |
 | `src/game/boss.js` | o Baldão Supremo do modo boss e a IA dele |
 
@@ -189,6 +200,7 @@ src/
     scoring.js          marcação de tinta nos baldões
     effects.js          números de dano, ondas, splats de tinta
     camera.js           câmera isométrica que segue o campeão
+    saguao.js           pracinha 3D do lobby online (andar enquanto a sala enche)
     match.js            regras da partida, times, fim de jogo
   ui/                   menu, HUD e minimapa
 ```

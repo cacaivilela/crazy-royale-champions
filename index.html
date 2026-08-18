@@ -183,9 +183,10 @@
     <!-- ====================== LOBBY ONLINE ====================== -->
     <div id="lobby" class="screen hidden">
       <div class="menu-bg"></div>
+      <canvas id="saguao-canvas" class="hidden"></canvas>
       <div class="lobby-box">
-        <h2>🌐 Multijogador online</h2>
-        <p class="lobby-sub">Até <b>6 jogadores</b> no mesmo time contra <b>6 COMs</b> — e o estádio fica <b>2x maior</b>.</p>
+        <h2 class="esconde-no-saguao">🌐 Multijogador online</h2>
+        <p class="lobby-sub esconde-no-saguao">Até <b>6 jogadores</b> no mesmo time contra <b>6 COMs</b> — e o estádio fica <b>2x maior</b>.</p>
 
         <div id="lobby-entrada">
           <label>Seu nome
@@ -223,26 +224,31 @@
           <div class="codigo-box">
             <span>CÓDIGO DA SALA</span>
             <strong id="lobby-codigo-atual">—</strong>
-            <button id="btn-copiar" class="ghost-btn">📋 copiar código</button>
-            <button id="btn-copiar-link" class="ghost-btn">🔗 copiar link do convite</button>
-            <p class="lobby-link" id="lobby-link"></p>
+            <button id="btn-copiar" class="ghost-btn esconde-no-saguao">📋 copiar código</button>
+            <button id="btn-copiar-link" class="ghost-btn esconde-no-saguao">🔗 copiar link do convite</button>
+            <p class="lobby-link esconde-no-saguao" id="lobby-link"></p>
           </div>
-          <h3>Jogadores <small id="lobby-contagem"></small></h3>
-          <div id="lobby-jogadores" class="lobby-lista"></div>
-          <p class="lobby-dica" id="lobby-dica">Esperando gente entrar…</p>
-          <p class="lobby-dica" id="lobby-cheat-info"></p>
+          <h3 class="esconde-no-saguao">Jogadores <small id="lobby-contagem"></small></h3>
+          <div id="lobby-jogadores" class="lobby-lista esconde-no-saguao"></div>
+          <p class="lobby-dica esconde-no-saguao" id="lobby-dica">Esperando gente entrar…</p>
+          <p class="lobby-dica esconde-no-saguao" id="lobby-cheat-info"></p>
           <div class="lobby-linha">
             <button id="btn-comecar" class="play-btn" disabled>▶ COMEÇAR — completar time com COMs</button>
           </div>
+          <p class="saguao-dica">🕹️ Enquanto a sala enche, dá pra andar pelo saguão:
+            <kbd>WASD</kbd>/setas (ou arraste na tela), <kbd>Shift</kbd> corre e <kbd>Espaço</kbd> pula.</p>
           <div class="lobby-linha">
+            <button id="btn-saguao" class="ghost-btn">🕹️ andar pelo saguão</button>
+          </div>
+          <div class="lobby-linha esconde-no-saguao">
             <button id="btn-trocar-champ" class="ghost-btn">🦸 trocar campeão</button>
             <button id="btn-sair-sala" class="ghost-btn">✖ sair da sala</button>
           </div>
         </div>
 
         <p id="lobby-status" class="lobby-status"></p>
-        <p id="lobby-diag" class="lobby-diag"></p>
-        <button id="btn-voltar-menu" class="ghost-btn">🏠 voltar ao menu</button>
+        <p id="lobby-diag" class="lobby-diag esconde-no-saguao"></p>
+        <button id="btn-voltar-menu" class="ghost-btn esconde-no-saguao">🏠 voltar ao menu</button>
       </div>
     </div>
 

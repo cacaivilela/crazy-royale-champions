@@ -9,11 +9,12 @@ import { sala } from '../net/sala.js'
 import { testarConexao } from '../net/transporte.js'
 import { MODOS } from '../game/cheats.js'
 import { getExtra } from '../data/extras.js'
+import { Saguao } from '../game/saguao.js'
 
 const $ = (s) => document.querySelector(s)
 
 export class Lobby {
-  constructor ({ champIdAtual, aoVoltar, aoTrocarCampeao }) {
+  constructor ({ champIdAtual, aoVoltar, aoTrocarCampeao, input }) {
     this.champIdAtual = champIdAtual
     this.aoVoltar = aoVoltar
     this.aoTrocarCampeao = aoTrocarCampeao
@@ -24,10 +25,16 @@ export class Lobby {
       contagem: $('#lobby-contagem'), dica: $('#lobby-dica'), status: $('#lobby-status'),
       comecar: $('#btn-comecar'),
       cheats: $('#lobby-cheats'), cheatInfo: $('#lobby-cheat-info'), modos: $('#lobby-modos'),
-      link: $('#lobby-link'), diag: $('#lobby-diag')
+      link: $('#lobby-link'), diag: $('#lobby-diag'),
+      saguao: $('#saguao-canvas'), btnSaguao: $('#btn-saguao')
     }
     this.cheatsEscolhido = 'nenhum'
     this.modoEscolhido = 'normal'
+    this.saguao = new Saguao({
+      canvas: this.el.saguao,
+      input,
+      aoPose: (pose) => sala.enviarPose(pose)
+    })
     this._bind()
   }
 
@@ -41,6 +48,7 @@ export class Lobby {
     $('#btn-testar').addEventListener('click', () => this.testar())
     $('#btn-sair-sala').addEventListener('click', () => { sala.sair(); this.mostrarEntrada() })
     $('#btn-voltar-menu').addEventListener('click', () => { sala.sair(); this.esconder(); this.aoVoltar() })
+    this.el.btnSaguao.addEventListener('click', () => this.focarSaguao())
     $('#btn-trocar-champ').addEventListener('click', () => this.aoTrocarCampeao())
     this.el.comecar.addEventListener('click', () => {
       this.status('preparando o estádio…')
@@ -65,6 +73,8 @@ export class Lobby {
     bus.on('sala:diagnostico', ({ texto }) => { this.el.diag.textContent = '· ' + texto })
     bus.on('menu:campeao', ({ champId }) => this.definirCampeao(champId))
     bus.on('sala:erro', ({ mensagem }) => this.status('⚠️ ' + mensagem))
+    bus.on('sala:saguao', (pose) => this.saguao.aplicarPose(pose.id, pose))
+    bus.on('sala:iniciar', () => this.pararSaguao())
     bus.on('sala:saiu-jogador', () => this.status('um jogador saiu da sala'))
   }
 
@@ -149,14 +159,20 @@ export class Lobby {
 
   definirCampeao (champId) {
     this.champIdAtual = champId
+    this.saguao.definirCampeao(champId)
     if (sala.tr) sala.escolherCampeao(champId)
   }
 
   // ---------------- tela ----------------
   mostrar () { this.el.tela.classList.remove('hidden') }
-  esconder () { this.el.tela.classList.add('hidden') }
+
+  esconder () {
+    this.pararSaguao()
+    this.el.tela.classList.add('hidden')
+  }
 
   mostrarEntrada () {
+    this.pararSaguao()
     this.el.entrada.classList.remove('hidden')
     this.el.sala.classList.add('hidden')
     this.status('')
@@ -167,12 +183,38 @@ export class Lobby {
     this.el.sala.classList.remove('hidden')
     this.el.codigoAtual.textContent = codigo
     this.el.comecar.classList.toggle('hidden', !sala.souHost)
+    this.iniciarSaguao()
+  }
+
+  // ---------------- saguão ----------------
+  /** Liga a pracinha 3D onde todo mundo anda enquanto a sala enche. */
+  iniciarSaguao () {
+    this.saguao.iniciar({
+      meuId: sala.meuId,
+      nome: (sala.eu && sala.eu.nome) || this.el.nome.value.trim() || 'Você',
+      champId: this.champIdAtual,
+      jogadores: sala.jogadores
+    })
+  }
+
+  pararSaguao () {
+    this.saguao.parar()
+    this.el.tela.classList.remove('saguao-focado')
+    if (this.el.btnSaguao) this.el.btnSaguao.textContent = '🕹️ andar pelo saguão'
+  }
+
+  /** Encolhe o painel pra dar palco ao saguão (e volta ao normal). */
+  focarSaguao () {
+    const focado = this.el.tela.classList.toggle('saguao-focado')
+    this.el.btnSaguao.textContent = focado ? '📋 ver a sala' : '🕹️ andar pelo saguão'
+    this.saguao.redimensionar()
   }
 
   status (txt) { this.el.status.textContent = txt }
 
   renderar (estado) {
     const jogadores = estado.jogadores || []
+    this.saguao.sincronizar(jogadores, sala.meuId, this.champIdAtual)
     const ehBoss = (estado.modoJogo || sala.modoJogo) === 'boss'
     const max = estado.max || sala.maxJogadores
     this.el.codigoAtual.textContent = estado.codigo || sala.codigo || '—'

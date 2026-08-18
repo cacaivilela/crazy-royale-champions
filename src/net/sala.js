@@ -171,6 +171,14 @@ export class Sala {
 
   // ---------------- rede ----------------
   enviarParaTodos (msg) { if (this.tr) this.tr.enviarParaTodos(msg) }
+
+  /** Manda a minha posição no saguão (só vale antes da partida começar). */
+  enviarPose (pose) {
+    if (!this.tr || this.iniciada) return
+    if (this.souHost) this.tr.enviarParaTodos({ t: 'sag', id: this.meuId, ...pose })
+    else this.tr.enviarAoHost({ t: 'sag', ...pose })
+  }
+
   enviarAoHost (msg) { if (this.tr) this.tr.enviarAoHost(msg) }
 
   _avisarLobby () {
@@ -230,6 +238,13 @@ export class Sala {
           if (j) { j.champId = msg.champId; j.extraId = msg.extraId || null; this._avisarLobby() }
           return
         }
+        if (msg.t === 'sag') {
+          // pose do saguão: o host carimba quem mandou e espalha pros outros
+          const eco = { t: 'sag', id: de, x: msg.x, z: msg.z, a: msg.a, y: msg.y, m: msg.m }
+          this.tr.enviarParaTodos(eco)
+          bus.emit('sala:saguao', eco)
+          return
+        }
         if (msg.t === 'cmd' && this.match) { this.match.receberComando(de, msg); return }
         if (msg.t === 'cheat' && this.match) { this.match.receberCheat(de, msg.texto); return }
       }
@@ -243,6 +258,7 @@ export class Sala {
         bus.emit('sala:lobby', msg)
         return
       }
+      if (msg.t === 'sag') { bus.emit('sala:saguao', msg); return }
       if (msg.t === 'iniciar') { this.iniciada = true; this._comecarLocal(msg); return }
       if (msg.t === 'recusado') { bus.emit('sala:erro', { mensagem: msg.motivo }); return }
       if (!this.match) return

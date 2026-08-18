@@ -11,6 +11,7 @@ import { construirForma } from './shapes.js'
 import { CameraJogo } from './camera.js'
 
 const RAIO = 18                 // raio da praça (limite de caminhada)
+const RECUO_MIRA = 7            // quanto a câmera mira à frente (desce o boneco na tela)
 const GRAVIDADE = 26
 const IMPULSO_PULO = 9
 const ENVIO_POR_SEG = 12        // taxa de envio da pose pra rede
@@ -32,7 +33,10 @@ const texturaEmoji = (emoji) => textura((ctx, w, h) => {
 }, 128, 128)
 
 const texturaNome = (nome, cor) => textura((ctx, w, h) => {
-  ctx.font = 'bold 44px "Trebuchet MS", sans-serif'
+  let tam = 44
+  const fonte = () => { ctx.font = `bold ${tam}px "Trebuchet MS", sans-serif` }
+  fonte()
+  while (ctx.measureText(nome).width > w - 20 && tam > 16) { tam -= 2; fonte() }
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineWidth = 8
@@ -107,7 +111,7 @@ class Boneco {
     sp.position.y = 0.75
     this.ui.add(sp)
     this.emojiSprite = sp
-    this.ui.position.y = altura + 0.6
+    this.ui.position.y = altura + 0.95
   }
 
   definirNome (nome) {
@@ -177,6 +181,7 @@ export class Saguao {
     this.tempo = 0
     this._acumEnvio = 0
     this._toque = { id: null, cx: 0, cy: 0, x: 0, y: 0 }
+    this._mira = new THREE.Vector3()
   }
 
   // ---------------- ciclo de vida ----------------
@@ -244,6 +249,15 @@ export class Saguao {
     sol.shadow.camera.far = 90
     this.scene.add(sol)
     this.scene.add(new THREE.AmbientLight(0xffffff, 0.25))
+
+    // terreno distante: sem ele o que passa da praça vira buraco transparente
+    const fundo = new THREE.Mesh(
+      new THREE.CircleGeometry(120, 48),
+      new THREE.MeshStandardMaterial({ color: 0x150f33, roughness: 1 })
+    )
+    fundo.rotation.x = -Math.PI / 2
+    fundo.position.y = -0.6
+    this.scene.add(fundo)
 
     // piso da praça
     const piso = new THREE.Mesh(
@@ -318,8 +332,8 @@ export class Saguao {
       this.scene.add(balde)
     }
 
-    this.camera = new CameraJogo(this.canvas, 1, 1.05)
-    this.camera.alvo.set(0, 0, 6)
+    this.camera = new CameraJogo(this.canvas, 1, 0.85)
+    this.camera.alvo.set(0, 0, 6 - RECUO_MIRA)
   }
 
   /** Chamado quando o painel do lobby encolhe/cresce. */
@@ -465,7 +479,10 @@ export class Saguao {
       // não deixa sair da praça
       const d = Math.hypot(eu.pos.x, eu.pos.z)
       if (d > RAIO) { eu.pos.x = (eu.pos.x / d) * RAIO; eu.pos.z = (eu.pos.z / d) * RAIO }
-      this.camera.seguir(eu.pos, dt)
+      // mira adiantada: joga o boneco pra parte de baixo da tela, longe do
+      // painel da sala que fica no topo
+      this._mira.set(eu.pos.x, 0, eu.pos.z - RECUO_MIRA)
+      this.camera.seguir(this._mira, dt)
       this._enviar(dt)
     }
 

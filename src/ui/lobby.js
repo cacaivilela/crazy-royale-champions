@@ -195,19 +195,25 @@ export class Lobby {
       champId: this.champIdAtual,
       jogadores: sala.jogadores
     })
+    // já entra compacto: o painel inteiro tapa justamente o meio da tela,
+    // que é onde os bonecos andam.
+    this.compactar(true)
   }
 
   pararSaguao () {
     this.saguao.parar()
-    this.el.tela.classList.remove('saguao-focado')
-    if (this.el.btnSaguao) this.el.btnSaguao.textContent = '🕹️ andar pelo saguão'
+    this.compactar(false)
   }
 
-  /** Encolhe o painel pra dar palco ao saguão (e volta ao normal). */
-  focarSaguao () {
-    const focado = this.el.tela.classList.toggle('saguao-focado')
-    this.el.btnSaguao.textContent = focado ? '📋 ver a sala' : '🕹️ andar pelo saguão'
+  /** Alterna entre painel compacto (saguão à mostra) e painel inteiro. */
+  compactar (ligado) {
+    this.el.tela.classList.toggle('saguao-focado', ligado)
+    this.el.btnSaguao.textContent = ligado ? '📋 ver a sala inteira' : '🕹️ voltar pro saguão'
     this.saguao.redimensionar()
+  }
+
+  focarSaguao () {
+    this.compactar(!this.el.tela.classList.contains('saguao-focado'))
   }
 
   status (txt) { this.el.status.textContent = txt }

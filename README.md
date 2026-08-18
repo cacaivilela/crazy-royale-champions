@@ -37,8 +37,11 @@ interpolam o resto — quem manda na vida, no placar e nos abates é sempre o ho
 
 Enquanto a sala enche, o lobby vira uma **pracinha 3D**: cada um anda com o campeão que escolheu e
 vê os outros da sala andando junto. <kbd>WASD</kbd>/setas (ou arrastar o dedo na tela) pra andar,
-<kbd>Shift</kbd> corre, <kbd>Espaço</kbd> pula — e o botão **🕹️ andar pelo saguão** encolhe o painel
-pra dar palco. Trocar de campeão troca o boneco na hora.
+<kbd>Shift</kbd> corre, <kbd>Espaço</kbd> pula. Trocar de campeão troca o boneco na hora.
+
+O painel da sala já entra **compacto e colado no topo** — inteiro, ele tapava justamente o meio da
+tela, que é onde os bonecos andam. O botão **📋 ver a sala inteira** abre a lista de jogadores e os
+outros botões; **🕹️ voltar pro saguão** encolhe de novo.
 
 A posição viaja pela mesma sala, em mensagens `sag` (12 por segundo andando, 2 parado) que o host
 repassa pra todo mundo; nada disso é simulado — é só enfeite, e some quando a partida começa.

@@ -26,7 +26,7 @@ export class Lobby {
       comecar: $('#btn-comecar'),
       cheats: $('#lobby-cheats'), cheatInfo: $('#lobby-cheat-info'), modos: $('#lobby-modos'),
       link: $('#lobby-link'), diag: $('#lobby-diag'),
-      saguao: $('#saguao-canvas'), btnSaguao: $('#btn-saguao'), btnCamera: $('#btn-camera')
+      saguao: $('#saguao-canvas'), btnSaguao: $('#btn-saguao')
     }
     this.cheatsEscolhido = 'nenhum'
     this.modoEscolhido = 'normal'
@@ -49,7 +49,6 @@ export class Lobby {
     $('#btn-sair-sala').addEventListener('click', () => { sala.sair(); this.mostrarEntrada() })
     $('#btn-voltar-menu').addEventListener('click', () => { sala.sair(); this.esconder(); this.aoVoltar() })
     this.el.btnSaguao.addEventListener('click', () => this.focarSaguao())
-    this.el.btnCamera.addEventListener('click', () => this.alternarCamera())
     $('#btn-trocar-champ').addEventListener('click', () => this.aoTrocarCampeao())
     this.el.comecar.addEventListener('click', () => {
       this.status('preparando o estádio…')
@@ -204,7 +203,6 @@ export class Lobby {
   pararSaguao () {
     this.saguao.parar()
     this.compactar(false)
-    this.el.btnCamera.textContent = '📷 ligar minha câmera'
   }
 
   /** Alterna entre painel compacto (saguão à mostra) e painel inteiro. */
@@ -216,15 +214,6 @@ export class Lobby {
 
   focarSaguao () {
     this.compactar(!this.el.tela.classList.contains('saguao-focado'))
-  }
-
-  /** Liga/desliga a webcam: o seu rosto vai pro lugar do emoji do campeão. */
-  async alternarCamera () {
-    this.el.btnCamera.disabled = true
-    const r = await this.saguao.alternarCamera()
-    this.el.btnCamera.disabled = false
-    this.el.btnCamera.textContent = r.ligada ? '📷 desligar câmera' : '📷 ligar minha câmera'
-    if (r.msg) this.status(r.msg)
   }
 
   status (txt) { this.el.status.textContent = txt }

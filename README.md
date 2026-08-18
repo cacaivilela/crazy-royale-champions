@@ -39,6 +39,11 @@ Enquanto a sala enche, o lobby vira uma **pracinha 3D**: cada um anda com o camp
 vê os outros da sala andando junto. <kbd>WASD</kbd>/setas (ou arrastar o dedo na tela) pra andar,
 <kbd>Shift</kbd> corre, <kbd>Espaço</kbd> pula. Trocar de campeão troca o boneco na hora.
 
+No lugar do emoji do campeão dá pra pôr **o seu rosto**: o botão **📷 ligar minha câmera** pede a
+webcam do aparelho e desenha o vídeo num retrato redondo em cima do boneco. É **só na sua tela** —
+o vídeo não vai pra rede, os outros continuam vendo o emoji. Precisa de `https` (ou `localhost`),
+e trocar de campeão não desliga a câmera.
+
 O painel da sala já entra **compacto e colado no topo** — inteiro, ele tapava justamente o meio da
 tela, que é onde os bonecos andam. O botão **📋 ver a sala inteira** abre a lista de jogadores e os
 outros botões; **🕹️ voltar pro saguão** encolhe de novo.

@@ -107,11 +107,25 @@ class Boneco {
 
     if (this.emojiSprite) { this.ui.remove(this.emojiSprite); descartar(this.emojiSprite) }
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: texturaEmoji(c.emoji), transparent: true }))
-    sp.scale.set(1, 1, 1)
-    sp.position.y = 0.75
     this.ui.add(sp)
     this.emojiSprite = sp
+    this.mapaEmoji = sp.material.map
+    this.usarRetrato(this.retrato)      // trocar de campeão não desliga a câmera
     this.ui.position.y = altura + 0.95
+  }
+
+  /**
+   * Troca o que fica flutuando acima da cabeça: o emoji do campeão (padrão)
+   * ou o retrato da webcam (mapa de textura vindo do saguão).
+   */
+  usarRetrato (mapa) {
+    this.retrato = mapa || null
+    const m = this.emojiSprite.material
+    m.map = mapa || this.mapaEmoji
+    m.needsUpdate = true
+    const t = mapa ? 1.4 : 1
+    this.emojiSprite.scale.set(t, t, 1)
+    this.emojiSprite.position.y = mapa ? 1.35 : 0.75
   }
 
   definirNome (nome) {
@@ -219,6 +233,7 @@ export class Saguao {
     cancelAnimationFrame(this._raf)
     window.removeEventListener('resize', this._onResize)
     this._desligarToque()
+    this.desligarCamera()
     for (const b of this.bonecos.values()) b.destruir()
     this.bonecos.clear()
     this.eu = null
@@ -395,6 +410,85 @@ export class Saguao {
 
   definirCampeao (champId) { if (this.eu) this.eu.trocarChamp(champId) }
 
+  // ---------------- webcam ----------------
+  get cameraLigada () { return !!this.fluxoCam }
+
+  /** Liga (ou desliga) a webcam: o seu rosto vai pro lugar do emoji. */
+  async alternarCamera () {
+    if (this.fluxoCam) {
+      this.desligarCamera()
+      return { ligada: false, msg: '📷 câmera desligada' }
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return { ligada: false, msg: '⚠️ este navegador não deixa usar a câmera aqui' }
+    }
+    if (!window.isSecureContext) {
+      return { ligada: false, msg: '⚠️ a câmera só funciona em https (ou localhost)' }
+    }
+    try {
+      const fluxo = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 320 } },
+        audio: false
+      })
+      if (!this.ativo) { fluxo.getTracks().forEach(t => t.stop()); return { ligada: false } }
+      this.fluxoCam = fluxo
+      this.video = document.createElement('video')
+      this.video.srcObject = fluxo
+      this.video.muted = true
+      this.video.playsInline = true
+      await this.video.play().catch(() => {})
+      this.espelho = document.createElement('canvas')
+      this.espelho.width = this.espelho.height = 160
+      this.texturaCam = new THREE.CanvasTexture(this.espelho)
+      this.texturaCam.colorSpace = THREE.SRGBColorSpace
+      if (this.eu) this.eu.usarRetrato(this.texturaCam)
+      return { ligada: true, msg: '📷 câmera ligada — só você vê o seu rosto' }
+    } catch (e) {
+      const negou = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')
+      return {
+        ligada: false,
+        msg: negou ? '📷 você não permitiu o uso da câmera' : '⚠️ não achei nenhuma câmera aqui'
+      }
+    }
+  }
+
+  desligarCamera () {
+    if (this.fluxoCam) this.fluxoCam.getTracks().forEach(t => t.stop())
+    this.fluxoCam = null
+    if (this.video) { this.video.srcObject = null; this.video = null }
+    if (this.eu) this.eu.usarRetrato(null)
+    if (this.texturaCam) { this.texturaCam.dispose(); this.texturaCam = null }
+    this.espelho = null
+  }
+
+  /** Copia o frame da webcam pro retrato redondo (espelhado, como um selfie). */
+  _atualizarRetrato () {
+    const v = this.video
+    if (!v || v.readyState < 2 || !this.espelho) return
+    const lado = Math.min(v.videoWidth, v.videoHeight)
+    if (!lado) return
+    const c = this.espelho
+    const ctx = c.getContext('2d')
+    const sx = (v.videoWidth - lado) / 2
+    const sy = (v.videoHeight - lado) / 2
+    const r = c.width / 2
+    ctx.clearRect(0, 0, c.width, c.height)
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(r, r, r - 5, 0, Math.PI * 2)
+    ctx.clip()
+    ctx.translate(c.width, 0)
+    ctx.scale(-1, 1)
+    ctx.drawImage(v, sx, sy, lado, lado, 0, 0, c.width, c.height)
+    ctx.restore()
+    ctx.beginPath()
+    ctx.arc(r, r, r - 4, 0, Math.PI * 2)
+    ctx.lineWidth = 12
+    ctx.strokeStyle = '#facc15'
+    ctx.stroke()
+    this.texturaCam.needsUpdate = true
+  }
+
   /** Pose de outro jogador chegando pela rede. */
   aplicarPose (id, pose) {
     if (!this.ativo || !id || id === this.meuId) return
@@ -486,6 +580,7 @@ export class Saguao {
       this._enviar(dt)
     }
 
+    if (this.fluxoCam) this._atualizarRetrato()
     for (const b of this.bonecos.values()) b.atualizar(dt, this.tempo, b !== eu)
     this.renderer.render(this.scene, this.camera.cam)
   }

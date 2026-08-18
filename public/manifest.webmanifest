@@ -2,13 +2,18 @@
   "name": "Crazy Royale Champions",
   "short_name": "CR Champions",
   "description": "MOBA 3D de arena do multiverso Crazy Royale",
-  "start_url": "../index.html",
+  "start_url": "../",
   "scope": "../",
   "display": "fullscreen",
   "orientation": "landscape",
   "background_color": "#0b0a1a",
   "theme_color": "#7c3aed",
   "icons": [
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }

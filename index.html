@@ -69,6 +69,7 @@
         <button id="btn-musica" class="ghost-btn">🎵 Música: ligada</button>
         <button id="btn-help" class="ghost-btn">❓ Como jogar</button>
         <button id="btn-patch" class="ghost-btn">📡 Notas do patch</button>
+        <button id="install-app" class="ghost-btn">📲 Instalar app</button>
       </div>
 
       <footer class="menu-foot">
@@ -267,5 +268,182 @@
   <!-- WebRTC pronto pra uso: broker público, sem servidor próprio -->
   <script src="./vendor/peerjs.min.js"></script>
   <script type="module" src="./src/main.js"></script>
+
+  <script>
+    // Service worker: faz o jogo funcionar offline e é o que permite instalar como app.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function () {});
+      });
+    }
+
+    // Botão "Instalar app" do menu.
+    (function () {
+      var deferredPrompt = null;
+      var installBtn = document.getElementById('install-app');
+      var jaInstalado = window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: fullscreen)').matches
+        || window.navigator.standalone === true;
+      if (jaInstalado && installBtn) installBtn.hidden = true;
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredPrompt = e;
+      });
+
+      function aviso(msg) {
+        var t = document.getElementById('install-toast');
+        if (!t) {
+          t = document.createElement('div');
+          t.id = 'install-toast';
+          t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);'
+            + 'max-width:90%;background:#111827;color:#fff;padding:12px 18px;border-radius:12px;'
+            + 'font:14px system-ui,sans-serif;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.4);'
+            + 'text-align:center;transition:opacity .3s';
+          document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = '1';
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function () { t.style.opacity = '0'; }, 6000);
+      }
+
+      if (installBtn) {
+        installBtn.addEventListener('click', async function () {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            try { await deferredPrompt.userChoice; } catch (err) {}
+            deferredPrompt = null;
+            return;
+          }
+          // Sem prompt automático: explica como instalar na mão.
+          var ua = navigator.userAgent || '';
+          if (/iPhone|iPad|iPod/.test(ua)) {
+            aviso('No iPhone/iPad: toque em Compartilhar ⬆️ e depois em "Adicionar à Tela de Início".');
+          } else if (jaInstalado) {
+            aviso('O app já está instalado! 🎉 Abra pelo ícone na sua tela.');
+          } else {
+            aviso('Para instalar: no computador clique no ícone de instalar na barra de endereço; no Android, menu ⋮ → "Instalar aplicativo".');
+          }
+        });
+      }
+
+      window.addEventListener('appinstalled', function () {
+        deferredPrompt = null;
+        if (installBtn) installBtn.hidden = true;
+        aviso('Crazy Royale Champions instalado! 🎉');
+      });
+    })();
+  </script>
+
+  <!-- Convite de instalar: aparece quando o jogo é aberto pelo botão "📲 Instalar app"
+       do site (cacaivilela.github.io), que abre o endereço com ?instalar=1 -->
+  <script>
+  (function () {
+    if (!/[?&]instalar=1/.test(location.search)) return;
+
+    var NOME = 'o Crazy Royale Champions';
+    var caixa = null;
+    var promptEvt = null;
+    var instalado = window.matchMedia('(display-mode: standalone)').matches
+      || window.matchMedia('(display-mode: fullscreen)').matches
+      || window.navigator.standalone === true;
+
+    function limparEndereco() {
+      try {
+        var u = new URL(location.href);
+        u.searchParams.delete('instalar');
+        history.replaceState(null, '', u.pathname + u.search + u.hash);
+      } catch (e) {}
+    }
+
+    function fechar() {
+      if (caixa) { caixa.remove(); caixa = null; }
+      limparEndereco();
+    }
+
+    function mostrar(texto) {
+      if (caixa) return atualizar(texto);
+      caixa = document.createElement('div');
+      caixa.style.cssText = 'position:fixed;inset:0;z-index:2147483647;display:flex;'
+        + 'align-items:center;justify-content:center;padding:20px;'
+        + 'background:rgba(6,4,18,.72);backdrop-filter:blur(3px);'
+        + 'font:16px/1.5 system-ui,-apple-system,Segoe UI,sans-serif';
+      caixa.innerHTML = '<div style="max-width:420px;width:100%;background:#151228;color:#fff;'
+        + 'border:2px solid rgba(255,255,255,.14);border-radius:18px;padding:24px;text-align:center;'
+        + 'box-shadow:0 20px 60px rgba(0,0,0,.5)">'
+        + '<div style="font-size:44px;line-height:1">📲</div>'
+        + '<h2 style="margin:10px 0 6px;font-size:22px">Instalar ' + NOME + '?</h2>'
+        + '<p id="crc-inst-msg" style="margin:0 0 18px;color:#c9c4e8;font-size:15px">'
+        + 'Fica com ícone na sua tela, abre em janela própria e dá pra jogar até sem internet.</p>'
+        + '<button id="crc-inst-sim" style="width:100%;cursor:pointer;font:inherit;font-weight:700;'
+        + 'font-size:17px;padding:14px;border:0;border-radius:12px;background:#16a34a;color:#fff">'
+        + '📲 INSTALAR</button>'
+        + '<button id="crc-inst-nao" style="width:100%;margin-top:10px;cursor:pointer;font:inherit;'
+        + 'padding:10px;border:0;border-radius:12px;background:transparent;color:#a5a0c8">'
+        + 'agora não, quero jogar</button>'
+        + '</div>';
+      document.body.appendChild(caixa);
+      caixa.querySelector('#crc-inst-nao').addEventListener('click', fechar);
+      caixa.addEventListener('click', function (e) { if (e.target === caixa) fechar(); });
+      caixa.querySelector('#crc-inst-sim').addEventListener('click', async function () {
+        if (promptEvt) {
+          promptEvt.prompt();
+          var escolha = null;
+          try { escolha = await promptEvt.userChoice; } catch (e) {}
+          promptEvt = null;
+          if (!escolha || escolha.outcome !== 'accepted') return fechar();
+          return;
+        }
+        atualizar(comoInstalarNaMao());
+      });
+      if (texto) atualizar(texto);
+    }
+
+    function atualizar(texto) {
+      if (!caixa || !texto) return;
+      var msg = caixa.querySelector('#crc-inst-msg');
+      if (msg) msg.textContent = texto;
+    }
+
+    function comoInstalarNaMao() {
+      var ua = navigator.userAgent || '';
+      if (/iPhone|iPad|iPod/.test(ua)) {
+        return 'No iPhone/iPad: toque em Compartilhar ⬆️ na barra do Safari e depois em "Adicionar à Tela de Início".';
+      }
+      if (/Android/.test(ua)) {
+        return 'No Android: abra o menu ⋮ do navegador e toque em "Instalar aplicativo" (ou "Adicionar à tela inicial").';
+      }
+      return 'No computador: clique no ícone de instalar na barra de endereço (ou menu ⋮ → "Instalar"). O Firefox não instala aplicativos web — use o Chrome ou o Edge.';
+    }
+
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      promptEvt = e;
+      mostrar();
+    });
+
+    window.addEventListener('appinstalled', function () {
+      promptEvt = null;
+      atualizar('Pronto! ' + NOME + ' foi instalado 🎉 Procure o ícone na sua tela.');
+      setTimeout(fechar, 2500);
+    });
+
+    function comecar() {
+      if (instalado) {
+        mostrar('Boa notícia: ' + NOME + ' já está instalado 🎉 Abra pelo ícone na sua tela.');
+        return;
+      }
+      // Se em 2,5s o navegador não ofereceu instalação, explicamos como fazer na mão.
+      setTimeout(function () { if (!promptEvt) mostrar(comoInstalarNaMao()); }, 2500);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', comecar);
+    } else {
+      comecar();
+    }
+  })();
+  </script>
 </body>
 </html>

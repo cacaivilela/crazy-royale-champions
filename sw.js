@@ -1,12 +1,15 @@
 // Service worker do Crazy Royale Champions.
 // Estratégia: cache-first para o jogo, NETWORK-FIRST para content/ —
 // senão o live update nunca veria um patch novo.
-const CACHE = 'crc-v1'
+const CACHE = 'crc-v2'
 const ESSENCIAIS = [
-  '../index.html',
-  '../src/style.css',
-  '../src/main.js',
-  '../vendor/three.module.js'
+  './',
+  './index.html',
+  './src/style.css',
+  './src/main.js',
+  './vendor/three.module.js',
+  './public/manifest.webmanifest',
+  './public/icon.svg'
 ]
 
 self.addEventListener('install', (e) => {

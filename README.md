@@ -146,9 +146,12 @@ CRC.reset()      // volta pro balanceamento de src/data/
 
 ## Música 🎵
 
-Trilha chiptune **gerada na hora** (WebAudio, nenhum arquivo de áudio): um sequenciador de
-16 colcheias toca baixo, melodia e bateria em loop. Faixas: `menu`, `batalha`, `boss`,
-mais os jingles de `vitoria` e `derrota` (que voltam sozinhos pra trilha anterior).
+É a **mesma trilha do Crazy Royale** (progressão C–G–Am–F, o mesmo gancho, o mesmo groove
+de baixo e a mesma bateria), só que **a 180 bpm** (o original é 140) e com a melodia saindo em
+**power chord** — tônica + quinta + oitava passando por uma distorção, com cara de guitarra.
+Tudo gerado na hora em WebAudio, nenhum arquivo de áudio. Faixas: `menu` (mais limpa),
+`batalha`, `boss` (uma quinta abaixo e mais distorcida) e os jingles de `vitoria`/`derrota`,
+que voltam sozinhos pra trilha anterior.
 Liga/desliga no botão 🎵 (menu e jogo) ou na tecla <kbd>M</kbd> — a escolha fica salva.
 As partituras estão em `src/core/music.js`, fáceis de trocar.
 

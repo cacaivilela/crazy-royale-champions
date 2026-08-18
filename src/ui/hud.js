@@ -4,6 +4,7 @@
 import { bus } from '../core/events.js'
 import { CONFIG, PATCH } from '../data/runtime.js'
 import { habilidadesDe, podeUsar, cooldownDe, nivelUltimate } from '../game/abilities.js'
+import { musica } from '../core/music.js'
 
 const $ = (sel) => document.querySelector(sel)
 
@@ -65,8 +66,19 @@ export class Hud {
     bus.on('recall:cancelado', () => this.toast('recall cancelado'))
     bus.on('jogador:renasceu', () => this.toast('✨ PROTEGIDO POR 2s'))
 
-    // botões (pausa + toque)
+    // botões (pausa + música + toque)
     this.el.btnPausa.addEventListener('click', () => bus.emit('ui:pausa', {}))
+    const btnMus = document.getElementById('btn-musica-jogo')
+    const pintarMus = () => {
+      btnMus.classList.toggle('mudo', !musica.ligada)
+      btnMus.textContent = musica.ligada ? '🎵' : '🔇'
+    }
+    btnMus.addEventListener('click', () => { musica.alternar(); pintarMus() })
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyM' && document.activeElement.tagName !== 'INPUT') { musica.alternar(); pintarMus() }
+    })
+    bus.on('musica:mudou', pintarMus)
+    pintarMus()
     const botao = (id, evt) => {
       const el = document.getElementById(id)
       if (el) el.addEventListener('pointerdown', (e) => { e.preventDefault(); bus.emit(evt, {}) })

@@ -7,6 +7,7 @@ import { CHAMPIONS, PATCH, CONFIG } from '../data/runtime.js'
 import { bus } from '../core/events.js'
 import { nivelUltimate } from '../game/abilities.js'
 import { extraEquipado } from '../data/extras.js'
+import { musica } from '../core/music.js'
 
 const $ = (s) => document.querySelector(s)
 
@@ -35,6 +36,12 @@ export class Menu {
     $('#btn-play').addEventListener('click', () => this.aoJogar(this.champId, this.modo))
     $('#btn-again').addEventListener('click', () => this.aoJogar(this.champId, this.modo))
     $('#btn-menu').addEventListener('click', () => bus.emit('ir:menu'))
+    const btnMusica = $('#btn-musica')
+    const pintarMusica = () => { btnMusica.textContent = musica.ligada ? '🎵 Música: ligada' : '🔇 Música: desligada' }
+    btnMusica.addEventListener('click', () => { musica.alternar(); pintarMusica() })
+    bus.on('musica:mudou', pintarMusica)
+    pintarMusica()
+
     $('#btn-help').addEventListener('click', () => this.modal(this._ajuda()))
     $('#btn-patch').addEventListener('click', () => this.modal(this._notas()))
     $('#modal-close').addEventListener('click', () => $('#modal').classList.add('hidden'))

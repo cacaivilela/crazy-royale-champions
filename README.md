@@ -144,6 +144,14 @@ CRC.reset()      // volta pro balanceamento de src/data/
 - `content/*.json` → reaplica o patch ao vivo
 - `.js` / `.html` → recarrega a página
 
+## Música 🎵
+
+Trilha chiptune **gerada na hora** (WebAudio, nenhum arquivo de áudio): um sequenciador de
+16 colcheias toca baixo, melodia e bateria em loop. Faixas: `menu`, `batalha`, `boss`,
+mais os jingles de `vitoria` e `derrota` (que voltam sozinhos pra trilha anterior).
+Liga/desliga no botão 🎵 (menu e jogo) ou na tecla <kbd>M</kbd> — a escolha fica salva.
+As partituras estão em `src/core/music.js`, fáceis de trocar.
+
 ## Estrutura
 
 ```
@@ -154,6 +162,8 @@ vendor/three.module.js  three.js r169 vendorizado (zero build)
 src/
   main.js               bootstrap: menu → partida → loop
   core/                 loop, input (teclado/mouse/joystick), eventos, rng
+    audio.js            efeitos sonoros procedurais
+    music.js            trilha chiptune (sequenciador)
   data/
     config.js           balanceamento base (partida, XP, selva, chefão, bots)
     champions.js        campeões, habilidades e ultimates (dados puros)

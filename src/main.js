@@ -15,6 +15,7 @@ import { Minimapa } from './ui/minimap.js'
 import { Lobby } from './ui/lobby.js'
 import { CheatsUI } from './ui/cheats-ui.js'
 import { Roleta } from './ui/roleta.js'
+import { musica } from './core/music.js'
 import { extraEquipado } from './data/extras.js'
 import { sala } from './net/sala.js'
 import { Match } from './game/match.js'
@@ -84,6 +85,7 @@ function iniciarPartidaOnline ({ roster, escala, souHost, rede, meuId, cheats, m
   minimapa.iniciar(match)
   cheatsUI.definirModo(cheats || 'nenhum')
   cheatsUI.iniciar(match)
+  musica.tocar(modoJogo === 'boss' ? 'boss' : 'batalha')
   hud.banner(modoJogo === 'boss'
     ? '🐍 MODO BOSS — DERRUBEM O BALDÃO SUPREMO!'
     : (souHost ? '🌐 VOCÊ É O ANFITRIÃO — VALENDO!' : '🌐 CONECTADO — VALENDO!'))
@@ -103,6 +105,7 @@ function iniciarPartida (champId, modo) {
   minimapa.iniciar(match)
   cheatsUI.definirModo(menu.cheats)
   cheatsUI.iniciar(match)
+  musica.tocar(modo === 'boss' ? 'boss' : 'batalha')
   hud.banner(modo === 'boss'
     ? '🐍 MODO BOSS — você + 5 COMs contra o Baldão Chefão!'
     : '🎨 VALENDO! Colete tinta e marque no baldão inimigo')
@@ -121,6 +124,7 @@ function voltarAoMenu () {
   if (sala.tr) sala.sair()
   menu.mostrar()
   menu.renderar()
+  musica.tocar('menu')
 }
 
 bus.on('partida:fim', (res) => hud.fim(res))
@@ -137,6 +141,11 @@ document.getElementById('btn-host-saiu-ok').addEventListener('click', () => {
   voltarAoMenu()
 })
 bus.on('ir:menu', voltarAoMenu)
+
+// a trilha começa no primeiro clique/tecla (regra dos navegadores)
+const ligarTrilha = () => { musica.tocar('menu'); window.removeEventListener('pointerdown', ligarTrilha); window.removeEventListener('keydown', ligarTrilha) }
+window.addEventListener('pointerdown', ligarTrilha)
+window.addEventListener('keydown', ligarTrilha)
 
 // convite por link: ...?sala=2610 já abre o lobby e entra
 const salaDaUrl = new URLSearchParams(location.search).get('sala')
@@ -165,7 +174,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 // ---------------- console de desenvolvimento ----------------
 // No devtools: CRC.patch({ versao:'9.9', campeoes:{ 'bananildo':{ stats:{ ataque: 999 } } } })
 window.CRC = {
-  CONFIG, CHAMPIONS, PATCH, live, sala, hud, minimapa, match: null,
+  CONFIG, CHAMPIONS, PATCH, live, sala, hud, minimapa, musica, match: null,
   patch: (p) => applyPatch(p, 'forcado'),
   reset: resetToBase,
   checar: () => live.checar(),
